@@ -30,8 +30,13 @@
           </svg>
           Logs
         </a>
+        <a href="#" class="nav-item" id="nav-settings">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+          </svg>
+          Cài đặt
+        </a>
       </nav>
-
       <div class="sidebar-links">
         <button class="sidebar-link" id="open-router-web" title="Mở 9Router Dashboard">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -240,6 +245,127 @@
         <div class="combined-log-wrapper">
           <div class="log-content" id="combined-log" style="height: calc(100vh - 180px)">
             <div class="log-empty">Chưa có log</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings view -->
+      <div id="view-settings" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Cài đặt</h1>
+            <p class="subtitle">Cấu hình ứng dụng và khởi động tự động</p>
+          </div>
+          <button class="btn btn-success" id="save-settings-btn">Lưu cài đặt</button>
+        </header>
+
+        <div class="settings-grid">
+          <!-- Windows Startup -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3>Khởi động cùng Windows</h3>
+                <p>Tự động mở ứng dụng khi đăng nhập Windows</p>
+              </div>
+            </div>
+            <label class="toggle-row">
+              <span class="toggle-label">
+                <strong>Mở cùng Windows</strong>
+                <small>Thêm vào Registry HKCU Run</small>
+              </span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="setting-auto-launch">
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-label">
+                <strong>Khởi động thu nhỏ</strong>
+                <small>Ẩn xuống tray thay vì hiện cửa sổ</small>
+              </span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="setting-start-minimized">
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Auto-start Services -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3>Tự động khởi động Services</h3>
+                <p>Tự động chạy services khi mở ứng dụng</p>
+              </div>
+            </div>
+            <label class="toggle-row">
+              <span class="toggle-label">
+                <strong>Tự khởi động 9Router</strong>
+                <small>Chạy 9router ngay khi app mở</small>
+              </span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="setting-auto-router">
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+            <label class="toggle-row">
+              <span class="toggle-label">
+                <strong>Tự khởi động OpenClaw</strong>
+                <small>Chạy openclaw gateway ngay khi app mở</small>
+              </span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="setting-auto-openclaw">
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Tray behavior -->
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+              </svg>
+              <div>
+                <h3>Hành vi System Tray</h3>
+                <p>Cấu hình khi đóng cửa sổ</p>
+              </div>
+            </div>
+            <label class="toggle-row">
+              <span class="toggle-label">
+                <strong>Ẩn xuống Tray khi đóng</strong>
+                <small>Không thoát, chạy nền trong system tray</small>
+              </span>
+              <div class="toggle-switch">
+                <input type="checkbox" id="setting-minimize-tray" checked>
+                <span class="toggle-slider"></span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Info -->
+          <div class="settings-card settings-info">
+            <div class="settings-card-header">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+              </svg>
+              <div>
+                <h3>Thông tin</h3>
+                <p>Phiên bản và thông tin ứng dụng</p>
+              </div>
+            </div>
+            <div class="info-rows">
+              <div class="info-row"><span>Phiên bản</span><span id="app-version-text">--</span></div>
+              <div class="info-row"><span>9Router port</span><span>:20128</span></div>
+              <div class="info-row"><span>OpenClaw port</span><span>:18789</span></div>
+              <div class="info-row"><span>Settings file</span><span class="info-mono" id="settings-path-text">--</span></div>
+            </div>
           </div>
         </div>
       </div>

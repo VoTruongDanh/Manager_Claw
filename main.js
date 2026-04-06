@@ -15,6 +15,88 @@ let processInfo = {
   openclaw: { pid: null, startTime: null, port: 18789, externalPid: null }
 };
 
+// ─── Settings ─────────────────────────────────────────────────────────────────
+const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
+
+function loadSettings() {
+  try {
+    if (fs.existsSync(SETTINGS_PATH)) {
+      return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
+    }
+  } catch (e) {}
+  return {
+    autoLaunch: false,
+    autoStartRouter: false,
+    autoStartOpenclaw: false,
+    minimizeToTray: true,
+    startMinimized: false
+  };
+}
+
+function saveSettings(settings) {
+  try {
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2));
+  } catch (e) {}
+}
+
+let settings = loadSettings();
+
+// ─── Auto-launch (Windows Registry) ──────────────────────────────────────────
+function setAutoLaunch(enable) {
+  const exePath = process.execPath;
+  const appName = 'ServiceManager';
+  const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+
+  if (enable) {
+    exec(`reg add "${regKey}" /v "${appName}" /t REG_SZ /d "${exePath}" /f`, (err) => {
+      if (!err) {
+        settings.autoLaunch = true;
+        saveSettings(settings);
+      }
+    });
+  } else {
+    exec(`reg delete "${regKey}" /v "${appName}" /f`, (err) => {
+      settings.autoLaunch = false;
+      saveSettings(settings);
+    });
+  }
+}
+
+function checkAutoLaunch() {
+  return new Promise((resolve) => {
+    const appName = 'ServiceManager';
+    const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+    exec(`reg query "${regKey}" /v "${appName}"`, (err, stdout) => {
+      resolve(!err && stdout.includes(appName));
+    });
+  });
+}
+
+// ─── IPC: Settings ────────────────────────────────────────────────────────────
+ipcMain.on('get-settings', async (event) => {
+  const autoLaunch = await checkAutoLaunch();
+  settings.autoLaunch = autoLaunch;
+  settings._path = SETTINGS_PATH;
+  event.reply('settings-data', settings);
+});
+
+ipcMain.on('save-settings', (event, newSettings) => {
+  const wasAutoLaunch = settings.autoLaunch;
+  settings = { ...settings, ...newSettings };
+  saveSettings(settings);
+
+  // Apply auto-launch change
+  if (newSettings.autoLaunch !== undefined && newSettings.autoLaunch !== wasAutoLaunch) {
+    setAutoLaunch(newSettings.autoLaunch);
+  }
+
+  event.reply('settings-saved', settings);
+});
+
+ipcMain.on('get-app-version', (event) => {
+  event.reply('app-version', app.getVersion());
+});
+
 // ─── Window ──────────────────────────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -29,13 +111,31 @@ function createWindow() {
   mainWindow.loadFile('index.html');
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+    if (!settings.startMinimized) {
+      mainWindow.show();
+    }
     // Kick off first status check
     broadcastStatus();
+
+    // Auto-start services nếu được bật
+    setTimeout(async () => {
+      const status = await checkStatusByPort();
+      if (settings.autoStartRouter && !status.router.running) {
+        mainWindow.webContents.send('auto-start', 'router');
+      }
+      if (settings.autoStartOpenclaw && !status.openclaw.running) {
+        mainWindow.webContents.send('auto-start', 'openclaw');
+      }
+    }, 1500);
   });
 
   mainWindow.on('close', (e) => {
-    if (!app.isQuitting) { e.preventDefault(); mainWindow.hide(); }
+    if (!app.isQuitting) {
+      if (settings.minimizeToTray !== false) {
+        e.preventDefault();
+        mainWindow.hide();
+      }
+    }
   });
 }
 

@@ -20,21 +20,23 @@ $('theme-toggle').addEventListener('click', () => {
 });
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-$('nav-dashboard').addEventListener('click', (e) => {
-  e.preventDefault();
-  $('view-dashboard').style.display = '';
-  $('view-logs').style.display = 'none';
-  $('nav-dashboard').classList.add('active');
-  $('nav-logs').classList.remove('active');
-});
+const views = {
+  dashboard: $('view-dashboard'),
+  logs:      $('view-logs'),
+  settings:  $('view-settings')
+};
 
-$('nav-logs').addEventListener('click', (e) => {
-  e.preventDefault();
-  $('view-dashboard').style.display = 'none';
-  $('view-logs').style.display = '';
-  $('nav-logs').classList.add('active');
-  $('nav-dashboard').classList.remove('active');
-});
+function switchView(name) {
+  Object.entries(views).forEach(([k, el]) => {
+    el.style.display = k === name ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  $(`nav-${name}`).classList.add('active');
+}
+
+$('nav-dashboard').addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
+$('nav-logs').addEventListener('click',      (e) => { e.preventDefault(); switchView('logs'); });
+$('nav-settings').addEventListener('click',  (e) => { e.preventDefault(); switchView('settings'); loadSettings(); });
 
 // ─── Sidebar quick links ──────────────────────────────────────────────────────
 $('open-router-web').addEventListener('click', () => ipcRenderer.send('open-browser', 'http://localhost:20128'));
@@ -289,3 +291,45 @@ setInterval(() => {
 
 // ─── Initial check ────────────────────────────────────────────────────────────
 ipcRenderer.send('check-status');
+ipcRenderer.send('get-app-version');
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+function loadSettings() {
+  ipcRenderer.send('get-settings');
+}
+
+ipcRenderer.on('settings-data', (_, s) => {
+  $('setting-auto-launch').checked     = !!s.autoLaunch;
+  $('setting-start-minimized').checked = !!s.startMinimized;
+  $('setting-auto-router').checked     = !!s.autoStartRouter;
+  $('setting-auto-openclaw').checked   = !!s.autoStartOpenclaw;
+  $('setting-minimize-tray').checked   = s.minimizeToTray !== false;
+  $('settings-path-text').textContent  = s._path || '...';
+});
+
+ipcRenderer.on('settings-saved', (_, s) => {
+  showToast('Đã lưu cài đặt', 'success');
+});
+
+ipcRenderer.on('app-version', (_, v) => {
+  $('app-version-text').textContent = `v${v}`;
+});
+
+$('save-settings-btn').addEventListener('click', () => {
+  ipcRenderer.send('save-settings', {
+    autoLaunch:        $('setting-auto-launch').checked,
+    startMinimized:    $('setting-start-minimized').checked,
+    autoStartRouter:   $('setting-auto-router').checked,
+    autoStartOpenclaw: $('setting-auto-openclaw').checked,
+    minimizeToTray:    $('setting-minimize-tray').checked
+  });
+});
+
+// ─── Auto-start trigger từ main ───────────────────────────────────────────────
+ipcRenderer.on('auto-start', (_, service) => {
+  const btn = $(`start-${service}`);
+  if (btn && !btn.disabled) {
+    addCombinedLog('System', `Tự động khởi động ${service === 'router' ? '9Router' : 'OpenClaw'}...`, 'info');
+    btn.click();
+  }
+});
