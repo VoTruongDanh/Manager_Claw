@@ -99,8 +99,12 @@ ipcMain.on('get-app-version', (event) => {
 
 // ─── Window ──────────────────────────────────────────────────────────────────
 function createWindow() {
+  // Restore saved window size
+  const winBounds = settings.windowBounds || { width: 1100, height: 720 };
+
   mainWindow = new BrowserWindow({
-    width: 1100, height: 720,
+    width: winBounds.width, height: winBounds.height,
+    x: winBounds.x, y: winBounds.y,
     minWidth: 900, minHeight: 600,
     webPreferences: { nodeIntegration: true, contextIsolation: false },
     frame: true,
@@ -109,6 +113,16 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+
+  // Save window size on resize/move
+  const saveBounds = () => {
+    if (!mainWindow.isMaximized() && !mainWindow.isMinimized()) {
+      settings.windowBounds = mainWindow.getBounds();
+      saveSettings(settings);
+    }
+  };
+  mainWindow.on('resize', saveBounds);
+  mainWindow.on('move',   saveBounds);
 
   mainWindow.once('ready-to-show', () => {
     if (!settings.startMinimized) {
@@ -320,11 +334,20 @@ function spawnService(name, cmd, args, infoKey, statusChannel, logChannel, event
       processes[infoKey] = null;
       processInfo[infoKey].pid = null;
       processInfo[infoKey].startTime = null;
+      const crashed = code !== 0 && code !== null;
       event.reply(statusChannel, {
         running: false,
         message: code === 0 ? `${name} đã dừng` : `${name} dừng với lỗi (code: ${code})`,
-        error: code !== 0
+        error: crashed
       });
+      // Notify crash via tray
+      if (crashed && tray) {
+        tray.displayBalloon({
+          iconType: 'error',
+          title: `${name} đã crash`,
+          content: `Process thoát với code ${code}. Click để mở app.`
+        });
+      }
       broadcastStatus();
     });
 
@@ -373,11 +396,21 @@ function stopService(name, infoKey, statusChannel, event) {
   }
 }
 
-// ─── IPC: start/stop ─────────────────────────────────────────────────────────
+// ─── IPC: start/stop/restart ──────────────────────────────────────────────────
 ipcMain.on('start-router',   (e) => spawnService('9Router',  '9router',  [],          'router',   'router-status',   'router-log',   e));
 ipcMain.on('start-openclaw', (e) => spawnService('OpenClaw', 'openclaw', ['gateway'], 'openclaw', 'openclaw-status', 'openclaw-log', e));
 ipcMain.on('stop-router',    (e) => stopService('9Router',  'router',   'router-status',   e));
 ipcMain.on('stop-openclaw',  (e) => stopService('OpenClaw', 'openclaw', 'openclaw-status', e));
+
+ipcMain.on('restart-router', (e) => {
+  stopService('9Router', 'router', 'router-status', e);
+  setTimeout(() => spawnService('9Router', '9router', [], 'router', 'router-status', 'router-log', e), 1500);
+});
+
+ipcMain.on('restart-openclaw', (e) => {
+  stopService('OpenClaw', 'openclaw', 'openclaw-status', e);
+  setTimeout(() => spawnService('OpenClaw', 'openclaw', ['gateway'], 'openclaw', 'openclaw-status', 'openclaw-log', e), 1500);
+});
 
 // ─── IPC: update ─────────────────────────────────────────────────────────────
 function updatePackage(pkgName, appLabel, event) {
