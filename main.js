@@ -1,482 +1,88 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, shell, globalShortcut, nativeImage } = require('electron');
 const { spawn, exec } = require('child_process');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
 let tray = null;
-let processes = {
-  router: null,
-  openclaw: null
-};
+let statusCheckInterval = null;
 
-// Process metadata
+let processes = { router: null, openclaw: null };
+
 let processInfo = {
-  router: { pid: null, startTime: null, port: 20128 },
-  openclaw: { pid: null, startTime: null, port: 18789 }
+  router:   { pid: null, startTime: null, port: 20128, externalPid: null },
+  openclaw: { pid: null, startTime: null, port: 18789, externalPid: null }
 };
 
+// ─── Window ──────────────────────────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    },
+    width: 1100, height: 720,
+    minWidth: 900, minHeight: 600,
+    webPreferences: { nodeIntegration: true, contextIsolation: false },
     frame: true,
-    backgroundColor: '#f5f5f5'
+    backgroundColor: '#ffffff',
+    show: false
   });
 
   mainWindow.loadFile('index.html');
 
-  mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
-      event.preventDefault();
-      mainWindow.hide();
-    }
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    // Kick off first status check
+    broadcastStatus();
+  });
+
+  mainWindow.on('close', (e) => {
+    if (!app.isQuitting) { e.preventDefault(); mainWindow.hide(); }
   });
 }
 
+// ─── Tray ─────────────────────────────────────────────────────────────────────
 function createTray() {
-  // Dùng PNG thay vì ICO để tránh lỗi
   const iconPath = path.join(__dirname, 'icon.png');
-  const fallbackIcon = path.join(__dirname, 'icon.ico');
-  
-  let trayIcon;
-  if (fs.existsSync(iconPath)) {
-    trayIcon = iconPath;
-  } else if (fs.existsSync(fallbackIcon)) {
-    trayIcon = fallbackIcon;
-  } else {
-    // Tạo nativeImage trống nếu không có icon
-    const { nativeImage } = require('electron');
-    trayIcon = nativeImage.createEmpty();
-  }
-  
+  let icon;
   try {
-    tray = new Tray(trayIcon);
+    icon = fs.existsSync(iconPath) ? iconPath : nativeImage.createEmpty();
+    tray = new Tray(icon);
   } catch (e) {
-    console.log('[MAIN] Tray icon error, using empty:', e.message);
-    const { nativeImage } = require('electron');
     tray = new Tray(nativeImage.createEmpty());
   }
-  
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: '🚀 Mở ứng dụng',
-      click: () => {
-        mainWindow.show();
-      }
-    },
-    { type: 'separator' },
-    {
-      label: '▶️ Khởi động tất cả',
-      click: () => {
-        mainWindow.webContents.send('tray-start-all');
-      }
-    },
-    {
-      label: '⏹️ Dừng tất cả',
-      click: () => {
-        mainWindow.webContents.send('tray-stop-all');
-      }
-    },
-    { type: 'separator' },
-    {
-      label: '9Router',
-      submenu: [
-        {
-          label: '▶️ Khởi động',
-          click: () => {
-            mainWindow.webContents.send('tray-start-router');
-          }
-        },
-        {
-          label: '⏹️ Dừng',
-          click: () => {
-            mainWindow.webContents.send('tray-stop-router');
-          }
-        }
-      ]
-    },
-    {
-      label: 'OpenClaw',
-      submenu: [
-        {
-          label: '▶️ Khởi động',
-          click: () => {
-            mainWindow.webContents.send('tray-start-openclaw');
-          }
-        },
-        {
-          label: '⏹️ Dừng',
-          click: () => {
-            mainWindow.webContents.send('tray-stop-openclaw');
-          }
-        }
-      ]
-    },
-    { type: 'separator' },
-    {
-      label: '❌ Thoát',
-      click: () => {
-        app.isQuitting = true;
-        app.quit();
-      }
-    }
-  ]);
-
-  tray.setToolTip('Quản lý OpenClaw & 9Router');
-  tray.setContextMenu(contextMenu);
-
-  // Double click để mở cửa sổ
-  tray.on('double-click', () => {
-    mainWindow.show();
-  });
+  tray.setToolTip('Service Manager');
+  updateTrayMenu(false, false);
+  tray.on('double-click', () => mainWindow.show());
 }
 
-// Khởi động 9Router
-ipcMain.on('start-router', (event) => {
-  console.log('[MAIN] start-router received');
-  
-  if (processes.router && processes.router.pid) {
-    console.log('[MAIN] Router already running, PID:', processes.router.pid);
-    event.reply('router-status', { 
-      running: true, 
-      message: '9Router đang chạy',
-      pid: processes.router.pid,
-      startTime: processInfo.router.startTime,
-      port: processInfo.router.port
-    });
-    return;
-  }
+function updateTrayMenu(routerRunning, openclawRunning) {
+  if (!tray) return;
+  const menu = Menu.buildFromTemplate([
+    { label: '🖥  Mở ứng dụng', click: () => mainWindow.show() },
+    { type: 'separator' },
+    {
+      label: routerRunning ? '⏹  Dừng 9Router' : '▶  Khởi động 9Router',
+      click: () => mainWindow.webContents.send(routerRunning ? 'tray-stop-router' : 'tray-start-router')
+    },
+    {
+      label: openclawRunning ? '⏹  Dừng OpenClaw' : '▶  Khởi động OpenClaw',
+      click: () => mainWindow.webContents.send(openclawRunning ? 'tray-stop-openclaw' : 'tray-start-openclaw')
+    },
+    { type: 'separator' },
+    { label: '🌐  Mở 9Router Dashboard', click: () => shell.openExternal('http://localhost:20128') },
+    { label: '🌐  Mở OpenClaw API',      click: () => shell.openExternal('http://127.0.0.1:18789') },
+    { type: 'separator' },
+    { label: '❌  Thoát', click: () => { app.isQuitting = true; app.quit(); } }
+  ]);
+  tray.setContextMenu(menu);
+  tray.setToolTip(`9Router: ${routerRunning ? '🟢' : '🔴'}  OpenClaw: ${openclawRunning ? '🟢' : '🔴'}`);
+}
 
-  try {
-    // Spawn directly without checking - let error event handle if command not found
-    processes.router = spawn('9router', [], {
-      windowsHide: true,
-      detached: false,
-      shell: true
-    });
-
-    processInfo.router.pid = processes.router.pid;
-    processInfo.router.startTime = Date.now();
-    
-    console.log('[MAIN] Router spawned, PID:', processInfo.router.pid, 'StartTime:', processInfo.router.startTime);
-
-    // Set a timeout to check if process actually started
-    const startTimeout = setTimeout(() => {
-      if (!processes.router || processes.router.exitCode !== null) {
-        console.log('[MAIN] Router failed to start within timeout');
-        event.reply('router-status', { 
-          running: false, 
-          error: true,
-          message: '9Router không khởi động được. Kiểm tra: npm list -g 9router' 
-        });
-      }
-    }, 2000);
-
-    processes.router.stdout.on('data', (data) => {
-      clearTimeout(startTimeout);
-      console.log('[MAIN] Router stdout:', data.toString());
-      event.reply('router-log', data.toString());
-    });
-
-    processes.router.stderr.on('data', (data) => {
-      console.log('[MAIN] Router stderr:', data.toString());
-      event.reply('router-log', `ERROR: ${data.toString()}`);
-    });
-
-    processes.router.on('error', (error) => {
-      clearTimeout(startTimeout);
-      console.log('[MAIN] Router error:', error.message);
-      event.reply('router-status', { 
-        running: false, 
-        error: true,
-        message: `Lỗi: ${error.message}. Cài đặt: npm install -g 9router` 
-      });
-      processes.router = null;
-      processInfo.router.pid = null;
-      processInfo.router.startTime = null;
-      broadcastStatus();
-    });
-
-    processes.router.on('close', (code) => {
-      clearTimeout(startTimeout);
-      console.log('[MAIN] Router closed, code:', code);
-      processes.router = null;
-      processInfo.router.pid = null;
-      processInfo.router.startTime = null;
-      
-      const message = code === 0 
-        ? '9Router đã dừng' 
-        : `9Router đã dừng với lỗi (code: ${code})`;
-      
-      event.reply('router-status', { 
-        running: false, 
-        message,
-        error: code !== 0
-      });
-      broadcastStatus();
-    });
-
-    // Send initial status immediately
-    const statusData = { 
-      running: true, 
-      message: '9Router đang khởi động...',
-      pid: processes.router.pid,
-      startTime: processInfo.router.startTime,
-      port: processInfo.router.port
-    };
-    
-    console.log('[MAIN] Sending router-status:', statusData);
-    event.reply('router-status', statusData);
-    broadcastStatus();
-  } catch (error) {
-    console.log('[MAIN] Router start exception:', error.message);
-    event.reply('router-status', { 
-      running: false, 
-      error: true,
-      message: `Không thể khởi động: ${error.message}` 
-    });
-  }
-});
-
-// Dừng 9Router
-ipcMain.on('stop-router', (event) => {
-  console.log('[MAIN] stop-router received');
-  
-  if (processes.router) {
-    try {
-      console.log('[MAIN] Killing router process, PID:', processes.router.pid);
-      processes.router.kill();
-      processes.router = null;
-      processInfo.router.pid = null;
-      processInfo.router.startTime = null;
-      
-      const statusData = { running: false, message: '9Router đã dừng' };
-      console.log('[MAIN] Sending router-status:', statusData);
-      event.reply('router-status', statusData);
-      
-      // Send immediate status update
-      broadcastStatus();
-    } catch (error) {
-      console.log('[MAIN] Router stop error:', error.message);
-      event.reply('router-status', { 
-        running: false, 
-        error: true,
-        message: `Lỗi khi dừng: ${error.message}` 
-      });
-    }
-  } else {
-    console.log('[MAIN] Router not running');
-    event.reply('router-status', { running: false, message: '9Router không chạy' });
-  }
-});
-
-// Khởi động OpenClaw
-ipcMain.on('start-openclaw', (event) => {
-  console.log('[MAIN] start-openclaw received');
-  
-  if (processes.openclaw && processes.openclaw.pid) {
-    console.log('[MAIN] OpenClaw already running, PID:', processes.openclaw.pid);
-    event.reply('openclaw-status', { 
-      running: true, 
-      message: 'OpenClaw đang chạy',
-      pid: processes.openclaw.pid,
-      startTime: processInfo.openclaw.startTime,
-      port: processInfo.openclaw.port
-    });
-    return;
-  }
-
-  try {
-    // Spawn directly without checking - let error event handle if command not found
-    processes.openclaw = spawn('openclaw', ['gateway'], {
-      windowsHide: true,
-      detached: false,
-      shell: true
-    });
-
-    processInfo.openclaw.pid = processes.openclaw.pid;
-    processInfo.openclaw.startTime = Date.now();
-    
-    console.log('[MAIN] OpenClaw spawned, PID:', processInfo.openclaw.pid, 'StartTime:', processInfo.openclaw.startTime);
-
-    // Set a timeout to check if process actually started
-    const startTimeout = setTimeout(() => {
-      if (!processes.openclaw || processes.openclaw.exitCode !== null) {
-        console.log('[MAIN] OpenClaw failed to start within timeout');
-        event.reply('openclaw-status', { 
-          running: false, 
-          error: true,
-          message: 'OpenClaw không khởi động được. Kiểm tra: npm list -g openclaw' 
-        });
-      }
-    }, 2000);
-
-    processes.openclaw.stdout.on('data', (data) => {
-      clearTimeout(startTimeout);
-      console.log('[MAIN] OpenClaw stdout:', data.toString());
-      event.reply('openclaw-log', data.toString());
-    });
-
-    processes.openclaw.stderr.on('data', (data) => {
-      console.log('[MAIN] OpenClaw stderr:', data.toString());
-      event.reply('openclaw-log', `ERROR: ${data.toString()}`);
-    });
-
-    processes.openclaw.on('error', (error) => {
-      clearTimeout(startTimeout);
-      console.log('[MAIN] OpenClaw error:', error.message);
-      event.reply('openclaw-status', { 
-        running: false, 
-        error: true,
-        message: `Lỗi: ${error.message}. Cài đặt: npm install -g openclaw` 
-      });
-      processes.openclaw = null;
-      processInfo.openclaw.pid = null;
-      processInfo.openclaw.startTime = null;
-      broadcastStatus();
-    });
-
-    processes.openclaw.on('close', (code) => {
-      clearTimeout(startTimeout);
-      console.log('[MAIN] OpenClaw closed, code:', code);
-      processes.openclaw = null;
-      processInfo.openclaw.pid = null;
-      processInfo.openclaw.startTime = null;
-      
-      const message = code === 0 
-        ? 'OpenClaw đã dừng' 
-        : `OpenClaw đã dừng với lỗi (code: ${code})`;
-      
-      event.reply('openclaw-status', { 
-        running: false, 
-        message,
-        error: code !== 0
-      });
-      broadcastStatus();
-    });
-
-    // Send initial status immediately
-    const statusData = { 
-      running: true, 
-      message: 'OpenClaw đang khởi động...',
-      pid: processes.openclaw.pid,
-      startTime: processInfo.openclaw.startTime,
-      port: processInfo.openclaw.port
-    };
-    
-    console.log('[MAIN] Sending openclaw-status:', statusData);
-    event.reply('openclaw-status', statusData);
-    broadcastStatus();
-  } catch (error) {
-    console.log('[MAIN] OpenClaw start exception:', error.message);
-    event.reply('openclaw-status', { 
-      running: false, 
-      error: true,
-      message: `Không thể khởi động: ${error.message}` 
-    });
-  }
-});
-
-// Dừng OpenClaw
-ipcMain.on('stop-openclaw', (event) => {
-  console.log('[MAIN] stop-openclaw received');
-  
-  if (processes.openclaw) {
-    try {
-      console.log('[MAIN] Killing openclaw process, PID:', processes.openclaw.pid);
-      processes.openclaw.kill();
-      processes.openclaw = null;
-      processInfo.openclaw.pid = null;
-      processInfo.openclaw.startTime = null;
-      
-      const statusData = { running: false, message: 'OpenClaw đã dừng' };
-      console.log('[MAIN] Sending openclaw-status:', statusData);
-      event.reply('openclaw-status', statusData);
-      
-      // Send immediate status update
-      broadcastStatus();
-    } catch (error) {
-      console.log('[MAIN] OpenClaw stop error:', error.message);
-      event.reply('openclaw-status', { 
-        running: false, 
-        error: true,
-        message: `Lỗi khi dừng: ${error.message}` 
-      });
-    }
-  } else {
-    console.log('[MAIN] OpenClaw not running');
-    event.reply('openclaw-status', { running: false, message: 'OpenClaw không chạy' });
-  }
-});
-
-// Mở thư mục
-ipcMain.on('open-folder', (event, folderPath) => {
-  exec(`explorer "${folderPath}"`, (error) => {
-    if (error) {
-      event.reply('folder-error', error.message);
-    }
-  });
-});
-
-// Cập nhật 9Router
-ipcMain.on('update-router', (event) => {
-  const updateProcess = spawn('cmd.exe', ['/c', 'npm', 'install', '-g', '9router'], {
-    windowsHide: true
-  });
-
-  updateProcess.stdout.on('data', (data) => {
-    event.reply('update-progress', { app: '9Router', message: data.toString() });
-  });
-
-  updateProcess.stderr.on('data', (data) => {
-    event.reply('update-progress', { app: '9Router', message: data.toString() });
-  });
-
-  updateProcess.on('close', (code) => {
-    if (code === 0) {
-      event.reply('update-result', { success: true, app: '9Router' });
-    } else {
-      event.reply('update-result', { success: false, app: '9Router', code });
-    }
-  });
-});
-
-// Cập nhật OpenClaw
-ipcMain.on('update-openclaw', (event) => {
-  const updateProcess = spawn('cmd.exe', ['/c', 'npm', 'install', '-g', 'openclaw'], {
-    windowsHide: true
-  });
-
-  updateProcess.stdout.on('data', (data) => {
-    event.reply('update-progress', { app: 'OpenClaw', message: data.toString() });
-  });
-
-  updateProcess.stderr.on('data', (data) => {
-    event.reply('update-progress', { app: 'OpenClaw', message: data.toString() });
-  });
-
-  updateProcess.on('close', (code) => {
-    if (code === 0) {
-      event.reply('update-result', { success: true, app: 'OpenClaw' });
-    } else {
-      event.reply('update-result', { success: false, app: 'OpenClaw', code });
-    }
-  });
-});
-
-// Kiểm tra port có đang listen không
+// ─── Port / HTTP health check ─────────────────────────────────────────────────
 function checkPort(port) {
   return new Promise((resolve) => {
-    exec(`netstat -ano | findstr ":${port} " | findstr "LISTENING"`, (error, stdout) => {
+    exec(`netstat -ano | findstr ":${port} " | findstr "LISTENING"`, (err, stdout) => {
       if (stdout && stdout.trim()) {
-        // Extract PID from last column
-        const match = stdout.trim().split(/\s+/).pop();
-        const pid = parseInt(match);
+        const pid = parseInt(stdout.trim().split(/\s+/).pop());
         resolve({ listening: true, pid: isNaN(pid) ? null : pid });
       } else {
         resolve({ listening: false, pid: null });
@@ -485,78 +91,227 @@ function checkPort(port) {
   });
 }
 
-// Kiểm tra trạng thái bằng port
+function httpPing(port, path = '/') {
+  return new Promise((resolve) => {
+    const req = http.get({ hostname: '127.0.0.1', port, path, timeout: 1000 }, (res) => {
+      resolve(res.statusCode < 500);
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+  });
+}
+
+// ─── Status engine ────────────────────────────────────────────────────────────
 async function checkStatusByPort() {
-  const [routerResult, openclawResult] = await Promise.all([
+  const [routerPort, openclawPort] = await Promise.all([
     checkPort(processInfo.router.port),
     checkPort(processInfo.openclaw.port)
   ]);
 
-  // Update processInfo nếu detect được từ port
-  if (routerResult.listening && !processes.router) {
-    processInfo.router.pid = routerResult.pid;
-    if (!processInfo.router.startTime) {
-      processInfo.router.startTime = Date.now();
-    }
-  } else if (!routerResult.listening && !processes.router) {
+  // Router
+  if (routerPort.listening) {
+    processInfo.router.pid = routerPort.pid;
+    if (!processInfo.router.startTime) processInfo.router.startTime = Date.now();
+    processInfo.router.externalPid = !processes.router ? routerPort.pid : null;
+  } else if (!processes.router) {
     processInfo.router.pid = null;
     processInfo.router.startTime = null;
+    processInfo.router.externalPid = null;
   }
 
-  if (openclawResult.listening && !processes.openclaw) {
-    processInfo.openclaw.pid = openclawResult.pid;
-    if (!processInfo.openclaw.startTime) {
-      processInfo.openclaw.startTime = Date.now();
-    }
-  } else if (!openclawResult.listening && !processes.openclaw) {
+  // OpenClaw
+  if (openclawPort.listening) {
+    processInfo.openclaw.pid = openclawPort.pid;
+    if (!processInfo.openclaw.startTime) processInfo.openclaw.startTime = Date.now();
+    processInfo.openclaw.externalPid = !processes.openclaw ? openclawPort.pid : null;
+  } else if (!processes.openclaw) {
     processInfo.openclaw.pid = null;
     processInfo.openclaw.startTime = null;
+    processInfo.openclaw.externalPid = null;
   }
 
-  return {
+  const status = {
     router: {
-      running: routerResult.listening || !!processes.router,
+      running: routerPort.listening || !!processes.router,
       pid: processInfo.router.pid,
       startTime: processInfo.router.startTime,
-      port: processInfo.router.port
+      port: processInfo.router.port,
+      external: !!processInfo.router.externalPid
     },
     openclaw: {
-      running: openclawResult.listening || !!processes.openclaw,
+      running: openclawPort.listening || !!processes.openclaw,
       pid: processInfo.openclaw.pid,
       startTime: processInfo.openclaw.startTime,
-      port: processInfo.openclaw.port
+      port: processInfo.openclaw.port,
+      external: !!processInfo.openclaw.externalPid
     }
   };
+
+  updateTrayMenu(status.router.running, status.openclaw.running);
+  return status;
 }
 
-// Kiểm tra trạng thái
-ipcMain.on('check-status', async (event) => {
-  const statusData = await checkStatusByPort();
-  console.log('[MAIN] check-status (port-based):', JSON.stringify(statusData));
-  event.reply('status-update', statusData);
-});
-
-// Broadcast status to all windows
 async function broadcastStatus() {
-  const statusData = await checkStatusByPort();
-  console.log('[MAIN] Broadcasting status:', JSON.stringify(statusData));
+  const data = await checkStatusByPort();
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('status-update', statusData);
+    mainWindow.webContents.send('status-update', data);
   }
 }
 
+// ─── IPC: check-status ────────────────────────────────────────────────────────
+ipcMain.on('check-status', async (event) => {
+  const data = await checkStatusByPort();
+  event.reply('status-update', data);
+});
+
+// ─── IPC: open-browser ───────────────────────────────────────────────────────
+ipcMain.on('open-browser', (event, url) => shell.openExternal(url));
+
+// ─── IPC: open-folder ────────────────────────────────────────────────────────
+ipcMain.on('open-folder', (event, folderPath) => {
+  exec(`explorer "${folderPath}"`, () => {});
+});
+
+// ─── Helper: spawn service ────────────────────────────────────────────────────
+function spawnService(name, cmd, args, infoKey, statusChannel, logChannel, event) {
+  if (processes[infoKey] && processes[infoKey].pid) {
+    event.reply(statusChannel, {
+      running: true, message: `${name} đang chạy`,
+      pid: processes[infoKey].pid,
+      startTime: processInfo[infoKey].startTime,
+      port: processInfo[infoKey].port
+    });
+    return;
+  }
+
+  try {
+    const proc = spawn(cmd, args, { windowsHide: true, detached: false, shell: true });
+    processes[infoKey] = proc;
+    processInfo[infoKey].pid = proc.pid;
+    processInfo[infoKey].startTime = Date.now();
+
+    const startTimeout = setTimeout(async () => {
+      const portCheck = await checkPort(processInfo[infoKey].port);
+      if (!portCheck.listening) {
+        event.reply(statusChannel, {
+          running: false, error: true,
+          message: `${name} không khởi động được. Kiểm tra: npm list -g ${cmd}`
+        });
+      }
+    }, 3000);
+
+    proc.stdout.on('data', (d) => {
+      clearTimeout(startTimeout);
+      event.reply(logChannel, d.toString());
+    });
+    proc.stderr.on('data', (d) => event.reply(logChannel, `ERROR: ${d.toString()}`));
+
+    proc.on('error', (err) => {
+      clearTimeout(startTimeout);
+      processes[infoKey] = null;
+      processInfo[infoKey].pid = null;
+      processInfo[infoKey].startTime = null;
+      event.reply(statusChannel, { running: false, error: true, message: `Lỗi: ${err.message}` });
+      broadcastStatus();
+    });
+
+    proc.on('close', (code) => {
+      clearTimeout(startTimeout);
+      processes[infoKey] = null;
+      processInfo[infoKey].pid = null;
+      processInfo[infoKey].startTime = null;
+      event.reply(statusChannel, {
+        running: false,
+        message: code === 0 ? `${name} đã dừng` : `${name} dừng với lỗi (code: ${code})`,
+        error: code !== 0
+      });
+      broadcastStatus();
+    });
+
+    event.reply(statusChannel, {
+      running: true, message: `${name} đang khởi động...`,
+      pid: proc.pid, startTime: processInfo[infoKey].startTime,
+      port: processInfo[infoKey].port
+    });
+    broadcastStatus();
+  } catch (err) {
+    event.reply(statusChannel, { running: false, error: true, message: `Không thể khởi động: ${err.message}` });
+  }
+}
+
+// ─── Helper: stop service ─────────────────────────────────────────────────────
+function stopService(name, infoKey, statusChannel, event) {
+  const proc = processes[infoKey];
+  const extPid = processInfo[infoKey].externalPid;
+
+  if (proc) {
+    try {
+      proc.kill('SIGTERM');
+    } catch (e) {
+      exec(`taskkill /PID ${proc.pid} /F /T`, () => {});
+    }
+    processes[infoKey] = null;
+    processInfo[infoKey].pid = null;
+    processInfo[infoKey].startTime = null;
+    event.reply(statusChannel, { running: false, message: `${name} đã dừng` });
+    broadcastStatus();
+  } else if (extPid) {
+    // Kill external process by PID
+    exec(`taskkill /PID ${extPid} /F /T`, (err) => {
+      if (!err) {
+        processInfo[infoKey].pid = null;
+        processInfo[infoKey].startTime = null;
+        processInfo[infoKey].externalPid = null;
+        event.reply(statusChannel, { running: false, message: `${name} đã dừng (PID ${extPid})` });
+      } else {
+        event.reply(statusChannel, { running: false, error: true, message: `Không thể dừng ${name}: ${err.message}` });
+      }
+      broadcastStatus();
+    });
+  } else {
+    event.reply(statusChannel, { running: false, message: `${name} không chạy` });
+  }
+}
+
+// ─── IPC: start/stop ─────────────────────────────────────────────────────────
+ipcMain.on('start-router',   (e) => spawnService('9Router',  '9router',  [],          'router',   'router-status',   'router-log',   e));
+ipcMain.on('start-openclaw', (e) => spawnService('OpenClaw', 'openclaw', ['gateway'], 'openclaw', 'openclaw-status', 'openclaw-log', e));
+ipcMain.on('stop-router',    (e) => stopService('9Router',  'router',   'router-status',   e));
+ipcMain.on('stop-openclaw',  (e) => stopService('OpenClaw', 'openclaw', 'openclaw-status', e));
+
+// ─── IPC: update ─────────────────────────────────────────────────────────────
+function updatePackage(pkgName, appLabel, event) {
+  const proc = spawn('cmd.exe', ['/c', 'npm', 'install', '-g', pkgName], { windowsHide: true });
+  proc.stdout.on('data', (d) => event.reply('update-progress', { app: appLabel, message: d.toString() }));
+  proc.stderr.on('data', (d) => event.reply('update-progress', { app: appLabel, message: d.toString() }));
+  proc.on('close', (code) => event.reply('update-result', { success: code === 0, app: appLabel, code }));
+}
+
+ipcMain.on('update-router',   (e) => updatePackage('9router',  '9Router',  e));
+ipcMain.on('update-openclaw', (e) => updatePackage('openclaw', 'OpenClaw', e));
+
+// ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
   createWindow();
   createTray();
+
+  // Keyboard shortcuts
+  globalShortcut.register('CommandOrControl+1', () => mainWindow.webContents.send('tray-start-router'));
+  globalShortcut.register('CommandOrControl+2', () => mainWindow.webContents.send('tray-start-openclaw'));
+  globalShortcut.register('CommandOrControl+Shift+1', () => mainWindow.webContents.send('tray-stop-router'));
+  globalShortcut.register('CommandOrControl+Shift+2', () => mainWindow.webContents.send('tray-stop-openclaw'));
+
+  // Periodic status check every 5s
+  statusCheckInterval = setInterval(broadcastStatus, 5000);
 });
 
-app.on('window-all-closed', (e) => {
-  e.preventDefault();
-});
+app.on('window-all-closed', (e) => e.preventDefault());
 
 app.on('before-quit', () => {
-  if (processes.router) processes.router.kill();
-  if (processes.openclaw) processes.openclaw.kill();
+  globalShortcut.unregisterAll();
+  clearInterval(statusCheckInterval);
+  if (processes.router)   try { processes.router.kill();   } catch (e) {}
+  if (processes.openclaw) try { processes.openclaw.kill(); } catch (e) {}
 });
 
 app.on('activate', () => {
