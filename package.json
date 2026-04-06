@@ -1,0 +1,24 @@
+{
+  "name": "claw-router-manager",
+  "version": "1.0.0",
+  "description": "Quản lý OpenClaw và 9Router",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": ["openclaw", "9router", "manager"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.clawrouter.manager",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    }
+  }
+}
