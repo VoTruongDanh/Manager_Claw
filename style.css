@@ -376,9 +376,19 @@ body {
   white-space: nowrap;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .btn:active { transform: scale(.97); }
+
+.btn-content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
 
 .btn-sm { padding: 7px 12px; font-size: 12.5px; }
 
@@ -664,7 +674,7 @@ body {
   background: var(--ripple-color, rgba(255,255,255,.2));
   transform: scale(0);
   opacity: .9;
-  mix-blend-mode: overlay;
+  z-index: 0;
   will-change: transform, opacity;
   animation: ripple-anim var(--animation-slow) cubic-bezier(.2,.7,.25,1) forwards;
   pointer-events: none;

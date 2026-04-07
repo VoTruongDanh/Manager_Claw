@@ -169,10 +169,28 @@ function clearLog(el) {
 }
 
 // ─── Ripple ───────────────────────────────────────────────────────────────────
+function ensureButtonContentLayer(btn) {
+  const existing = Array.from(btn.childNodes).find(node =>
+    node.nodeType === Node.ELEMENT_NODE && node.classList.contains('btn-content')
+  );
+  if (existing) return existing;
+
+  const content = document.createElement('span');
+  content.className = 'btn-content';
+
+  Array.from(btn.childNodes)
+    .filter(node => !(node.nodeType === Node.ELEMENT_NODE && node.classList.contains('ripple')))
+    .forEach(node => content.appendChild(node));
+
+  btn.appendChild(content);
+  return content;
+}
+
 function initRipple() {
   document.addEventListener('mousedown', (e) => {
     const btn = e.target.closest('.btn');
     if (!btn) return;
+    ensureButtonContentLayer(btn);
     const rect   = btn.getBoundingClientRect();
     const size   = Math.max(rect.width, rect.height);
     const ripple = document.createElement('span');
