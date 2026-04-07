@@ -121,10 +121,14 @@ body {
 
 .nav-item.active::before { transform: scaleX(1); }
 
-.nav-item > * { position: relative; z-index: 1; }
+.nav-item { position: relative; overflow: hidden; }
+.nav-item svg,
+.nav-item span { position: relative; z-index: 1; }
 
 .nav-item:hover { background: var(--surface-2); color: var(--text); }
-.nav-item.active { background: var(--text); color: var(--surface); }
+.nav-item.active { background: transparent; color: #fff; }
+
+[data-theme="dark"] .nav-item.active { color: #09090b; }
 
 /* Sidebar quick links */
 .sidebar-links {
@@ -1587,4 +1591,196 @@ body {
 @keyframes viewEnter {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Shutdown Timer ─────────────────────────────────────────────────────────── */
+.shutdown-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .shutdown-layout { grid-template-columns: 1fr; }
+}
+
+/* Countdown card */
+.shutdown-countdown-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 32px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.shutdown-countdown-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+#shutdown-countdown {
+  font-size: 52px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -2px;
+  color: var(--text);
+  line-height: 1;
+  font-family: 'Consolas', monospace;
+}
+
+.shutdown-countdown-label {
+  font-size: 12px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-weight: 600;
+}
+
+/* Progress bar */
+.shutdown-progress-wrap { width: 100%; }
+
+.shutdown-progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.shutdown-progress-bar {
+  height: 100%;
+  background: var(--blue);
+  border-radius: 4px;
+  transition: width .5s linear, background .3s;
+  width: 0%;
+}
+
+.shutdown-progress-bar.warning { background: var(--amber); }
+.shutdown-progress-bar.danger  { background: var(--red); animation: pulse-bar 1s infinite; }
+
+@keyframes pulse-bar {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .6; }
+}
+
+/* Status row */
+.shutdown-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  text-align: center;
+}
+
+/* Controls card */
+.shutdown-controls-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.shutdown-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shutdown-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--text-3);
+}
+
+.shutdown-select {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+
+.shutdown-select:focus { border-color: var(--blue); }
+.shutdown-select:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Time inputs */
+.shutdown-time-inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.shutdown-time-unit {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.shutdown-input {
+  width: 100%;
+  padding: 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+  transition: border-color .15s;
+  font-family: 'Consolas', monospace;
+}
+
+.shutdown-input:focus  { border-color: var(--blue); }
+.shutdown-input:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Remove number input arrows */
+.shutdown-input::-webkit-inner-spin-button,
+.shutdown-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.shutdown-input[type=number] { -moz-appearance: textfield; }
+
+.shutdown-unit-label {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+/* Presets */
+.shutdown-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.shutdown-preset {
+  min-width: 52px;
+}
+
+/* Actions */
+.shutdown-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
 }

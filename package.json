@@ -2,7 +2,7 @@
   "name": "claw-router-manager",
   "version": "1.0.0",
   "description": "Quản lý OpenClaw và 9Router",
-  "main": "main.js",
+  "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder"
