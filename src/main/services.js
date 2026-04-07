@@ -1,21 +1,42 @@
 const { spawn, exec } = require('child_process');
-const http = require('http');
+const os = require('os');
 
-// ─── Registry of running processes ───────────────────────────────────────────
 const processes = {};
+const serviceConfigs = {};
+const serviceHooks = {};
+const metricSamples = {};
+const autoHealHistory = {};
 
 const processInfo = {
-  router:   { pid: null, startTime: null, port: 20128, externalPid: null },
-  openclaw: { pid: null, startTime: null, port: 18789, externalPid: null }
+  router: {
+    pid: null,
+    startTime: null,
+    port: 20128,
+    externalPid: null,
+    expectedRunning: false,
+    stopping: false,
+    unresponsiveSince: null
+  },
+  openclaw: {
+    pid: null,
+    startTime: null,
+    port: 18789,
+    externalPid: null,
+    expectedRunning: false,
+    stopping: false,
+    unresponsiveSince: null
+  }
 };
 
-// ─── Port check ───────────────────────────────────────────────────────────────
+let autoHealEnabled = false;
+let monitorTimer = null;
+
 function checkPort(port) {
   return new Promise((resolve) => {
     exec(`netstat -ano | findstr ":${port} " | findstr "LISTENING"`, (err, stdout) => {
       if (stdout && stdout.trim()) {
-        const pid = parseInt(stdout.trim().split(/\s+/).pop());
-        resolve({ listening: true, pid: isNaN(pid) ? null : pid });
+        const pid = parseInt(stdout.trim().split(/\s+/).pop(), 10);
+        resolve({ listening: true, pid: Number.isNaN(pid) ? null : pid });
       } else {
         resolve({ listening: false, pid: null });
       }
@@ -23,35 +44,115 @@ function checkPort(port) {
   });
 }
 
-// ─── Status snapshot ──────────────────────────────────────────────────────────
-async function getStatus() {
-  const [routerPort, openclawPort] = await Promise.all([
-    checkPort(processInfo.router.port),
-    checkPort(processInfo.openclaw.port)
-  ]);
+function execCommand(command) {
+  return new Promise((resolve) => {
+    exec(command, { windowsHide: true, maxBuffer: 1024 * 1024 }, (err, stdout) => {
+      resolve(err ? '' : (stdout || '').trim());
+    });
+  });
+}
 
-  for (const [key, portResult] of [['router', routerPort], ['openclaw', openclawPort]]) {
-    if (portResult.listening) {
-      processInfo[key].pid = portResult.pid;
-      if (!processInfo[key].startTime) processInfo[key].startTime = Date.now();
-      processInfo[key].externalPid = !processes[key] ? portResult.pid : null;
-    } else if (!processes[key]) {
-      processInfo[key].pid = null;
-      processInfo[key].startTime = null;
-      processInfo[key].externalPid = null;
-    }
+function getHooks(key) {
+  return serviceHooks[key] || {};
+}
+
+function emitStatus(key, payload) {
+  getHooks(key).onStatus && getHooks(key).onStatus(payload);
+}
+
+function emitLog(key, message) {
+  getHooks(key).onLog && getHooks(key).onLog(message);
+}
+
+function emitCrash(key, label, code) {
+  getHooks(key).onCrash && getHooks(key).onCrash(label, code);
+}
+
+function emitAutoHeal(key, label, reason, attempt) {
+  getHooks(key).onAutoHeal && getHooks(key).onAutoHeal(label, reason, attempt);
+}
+
+function rememberConfig(config) {
+  if (!config || !config.key) return null;
+  serviceConfigs[config.key] = { ...(serviceConfigs[config.key] || {}), ...config };
+  if (!autoHealHistory[config.key]) autoHealHistory[config.key] = [];
+  return serviceConfigs[config.key];
+}
+
+function resetRuntime(key, { clearExpectation = false } = {}) {
+  processes[key] = null;
+  processInfo[key].pid = null;
+  processInfo[key].startTime = null;
+  processInfo[key].externalPid = null;
+  processInfo[key].stopping = false;
+  processInfo[key].unresponsiveSince = null;
+  delete metricSamples[key];
+  if (clearExpectation) processInfo[key].expectedRunning = false;
+}
+
+function canAutoHeal(key) {
+  const now = Date.now();
+  autoHealHistory[key] = (autoHealHistory[key] || []).filter((ts) => now - ts < 60 * 60 * 1000);
+  return autoHealHistory[key].length < 3;
+}
+
+function registerAutoHeal(key) {
+  autoHealHistory[key] = (autoHealHistory[key] || []).filter((ts) => Date.now() - ts < 60 * 60 * 1000);
+  autoHealHistory[key].push(Date.now());
+  return autoHealHistory[key].length;
+}
+
+async function attemptAutoHeal(key, reason) {
+  const cfg = serviceConfigs[key];
+  if (!cfg || !autoHealEnabled || !processInfo[key].expectedRunning) return false;
+
+  if (!canAutoHeal(key)) {
+    emitLog(key, `[auto-heal] Bo qua ${cfg.label}: da restart 3 lan trong 1 gio`);
+    processInfo[key].unresponsiveSince = Date.now();
+    return false;
   }
+
+  const attempt = registerAutoHeal(key);
+  emitLog(key, `[auto-heal] Restart ${cfg.label} (${reason}) [${attempt}/3]`);
+  emitAutoHeal(key, cfg.label, reason, attempt);
+  restartService({ key, reason: 'auto-heal', silentStopStatus: true });
+  return true;
+}
+
+function registerService(config, hooks = {}) {
+  rememberConfig(config);
+  serviceHooks[config.key] = { ...(serviceHooks[config.key] || {}), ...hooks };
+  ensureMonitor();
+}
+
+async function getStatus() {
+  const keys = Object.keys(processInfo);
+  const portChecks = await Promise.all(keys.map((key) => checkPort(processInfo[key].port)));
+
+  keys.forEach((key, index) => {
+    const portResult = portChecks[index];
+    const info = processInfo[key];
+
+    if (portResult.listening) {
+      info.pid = portResult.pid;
+      if (!info.startTime) info.startTime = Date.now();
+      info.externalPid = !processes[key] ? portResult.pid : null;
+      info.unresponsiveSince = null;
+    } else if (!processes[key] && !info.expectedRunning) {
+      resetRuntime(key, { clearExpectation: false });
+    }
+  });
 
   return {
     router: {
-      running: routerPort.listening || !!processes.router,
+      running: portChecks[0].listening || !!processes.router,
       pid: processInfo.router.pid,
       startTime: processInfo.router.startTime,
       port: processInfo.router.port,
       external: !!processInfo.router.externalPid
     },
     openclaw: {
-      running: openclawPort.listening || !!processes.openclaw,
+      running: portChecks[1].listening || !!processes.openclaw,
       pid: processInfo.openclaw.pid,
       startTime: processInfo.openclaw.startTime,
       port: processInfo.openclaw.port,
@@ -60,91 +161,298 @@ async function getStatus() {
   };
 }
 
-// ─── Spawn ────────────────────────────────────────────────────────────────────
-function spawnService({ key, label, cmd, args, statusCh, logCh, onStatus, onLog, onCrash }) {
-  if (processes[key] && processes[key].pid) {
-    onStatus({ running: true, message: `${label} đang chạy`, pid: processes[key].pid, startTime: processInfo[key].startTime, port: processInfo[key].port });
+function spawnService(config = {}) {
+  const cfg = rememberConfig(config.cmd ? config : { ...(serviceConfigs[config.key] || {}), ...config });
+  if (!cfg || !cfg.key || !cfg.cmd) return;
+
+  if (processes[cfg.key] && processes[cfg.key].pid) {
+    emitStatus(cfg.key, {
+      running: true,
+      message: `${cfg.label} dang chay`,
+      pid: processes[cfg.key].pid,
+      startTime: processInfo[cfg.key].startTime,
+      port: processInfo[cfg.key].port
+    });
     return;
   }
 
   try {
-    const proc = spawn(cmd, args, { windowsHide: true, detached: false, shell: true });
-    processes[key] = proc;
-    processInfo[key].pid = proc.pid;
-    processInfo[key].startTime = Date.now();
+    processInfo[cfg.key].expectedRunning = config.expectedRunning !== false;
+    processInfo[cfg.key].stopping = false;
+    processInfo[cfg.key].externalPid = null;
+    processInfo[cfg.key].unresponsiveSince = null;
+
+    const proc = spawn(cfg.cmd, cfg.args || [], {
+      windowsHide: true,
+      detached: false,
+      shell: true
+    });
+
+    processes[cfg.key] = proc;
+    processInfo[cfg.key].pid = proc.pid;
+    processInfo[cfg.key].startTime = Date.now();
 
     const startTimeout = setTimeout(async () => {
-      const check = await checkPort(processInfo[key].port);
+      const check = await checkPort(processInfo[cfg.key].port);
       if (!check.listening) {
-        onStatus({ running: false, error: true, message: `${label} không khởi động được. Kiểm tra: npm list -g ${cmd}` });
+        emitStatus(cfg.key, {
+          running: false,
+          error: true,
+          message: `${cfg.label} khong khoi dong duoc. Kiem tra: npm list -g ${cfg.cmd}`
+        });
       }
     }, 3000);
 
-    proc.stdout.on('data', (d) => { clearTimeout(startTimeout); onLog(d.toString()); });
-    proc.stderr.on('data', (d) => onLog(`ERROR: ${d.toString()}`));
+    proc.stdout.on('data', (data) => {
+      clearTimeout(startTimeout);
+      processInfo[cfg.key].unresponsiveSince = null;
+      emitLog(cfg.key, data.toString());
+    });
+
+    proc.stderr.on('data', (data) => {
+      emitLog(cfg.key, `ERROR: ${data.toString()}`);
+    });
 
     proc.on('error', (err) => {
       clearTimeout(startTimeout);
-      processes[key] = null;
-      processInfo[key].pid = null;
-      processInfo[key].startTime = null;
-      onStatus({ running: false, error: true, message: `Lỗi: ${err.message}` });
+      resetRuntime(cfg.key, { clearExpectation: false });
+      emitStatus(cfg.key, { running: false, error: true, message: `Loi: ${err.message}` });
     });
 
     proc.on('close', (code) => {
       clearTimeout(startTimeout);
-      processes[key] = null;
-      processInfo[key].pid = null;
-      processInfo[key].startTime = null;
-      const crashed = code !== 0 && code !== null;
-      onStatus({ running: false, message: code === 0 ? `${label} đã dừng` : `${label} dừng với lỗi (code: ${code})`, error: crashed });
-      if (crashed) onCrash && onCrash(label, code);
+      const wasStopping = processInfo[cfg.key].stopping;
+      const shouldAutoHeal = processInfo[cfg.key].expectedRunning && !wasStopping;
+      resetRuntime(cfg.key, { clearExpectation: false });
+
+      if (!wasStopping) {
+        const crashed = code !== 0 && code !== null;
+        emitStatus(cfg.key, {
+          running: false,
+          error: crashed,
+          message: code === 0 ? `${cfg.label} da dung` : `${cfg.label} dung voi loi (code: ${code})`
+        });
+        if (crashed) emitCrash(cfg.key, cfg.label, code);
+      }
+
+      if (shouldAutoHeal) {
+        attemptAutoHeal(cfg.key, code === 0 ? 'dung bat ngo' : `crash code ${code}`);
+      }
     });
 
-    onStatus({ running: true, message: `${label} đang khởi động...`, pid: proc.pid, startTime: processInfo[key].startTime, port: processInfo[key].port });
+    emitStatus(cfg.key, {
+      running: true,
+      message: `${cfg.label} dang khoi dong...`,
+      pid: proc.pid,
+      startTime: processInfo[cfg.key].startTime,
+      port: processInfo[cfg.key].port
+    });
   } catch (err) {
-    onStatus({ running: false, error: true, message: `Không thể khởi động: ${err.message}` });
+    emitStatus(cfg.key, {
+      running: false,
+      error: true,
+      message: `Khong the khoi dong: ${err.message}`
+    });
   }
 }
 
-// ─── Stop ─────────────────────────────────────────────────────────────────────
-function stopService({ key, label, onStatus }) {
+function stopService({ key, keepExpectedRunning = false, silentStatus = false } = {}) {
+  const cfg = serviceConfigs[key];
+  if (!cfg) return;
+
   const proc = processes[key];
   const extPid = processInfo[key].externalPid;
 
+  processInfo[key].expectedRunning = keepExpectedRunning;
+  processInfo[key].stopping = !!proc;
+  processInfo[key].unresponsiveSince = null;
+
   if (proc) {
-    try { proc.kill('SIGTERM'); } catch (e) { exec(`taskkill /PID ${proc.pid} /F /T`, () => {}); }
-    processes[key] = null;
-    processInfo[key].pid = null;
-    processInfo[key].startTime = null;
-    onStatus({ running: false, message: `${label} đã dừng` });
-  } else if (extPid) {
+    try {
+      proc.kill('SIGTERM');
+    } catch (err) {
+      exec(`taskkill /PID ${proc.pid} /F /T`, () => {});
+    }
+
+    if (!silentStatus) {
+      emitStatus(key, { running: false, message: `${cfg.label} da dung` });
+    }
+    return;
+  }
+
+  processInfo[key].stopping = false;
+
+  if (extPid) {
     exec(`taskkill /PID ${extPid} /F /T`, (err) => {
       if (!err) {
-        processInfo[key].pid = null;
-        processInfo[key].startTime = null;
-        processInfo[key].externalPid = null;
-        onStatus({ running: false, message: `${label} đã dừng (PID ${extPid})` });
-      } else {
-        onStatus({ running: false, error: true, message: `Không thể dừng ${label}: ${err.message}` });
+        resetRuntime(key, { clearExpectation: !keepExpectedRunning });
+        if (!silentStatus) emitStatus(key, { running: false, message: `${cfg.label} da dung (PID ${extPid})` });
+      } else if (!silentStatus) {
+        emitStatus(key, {
+          running: false,
+          error: true,
+          message: `Khong the dung ${cfg.label}: ${err.message}`
+        });
       }
     });
-  } else {
-    onStatus({ running: false, message: `${label} không chạy` });
+  } else if (!silentStatus) {
+    emitStatus(key, { running: false, message: `${cfg.label} khong chay` });
   }
 }
 
-// ─── Update (npm install -g) ──────────────────────────────────────────────────
+function restartService({ key, reason = 'manual', silentStopStatus = false } = {}) {
+  const cfg = serviceConfigs[key];
+  if (!cfg) return;
+
+  processInfo[key].expectedRunning = true;
+  processInfo[key].unresponsiveSince = null;
+
+  const hasLiveProcess = !!processes[key] || !!processInfo[key].externalPid;
+  if (reason === 'manual') {
+    emitLog(key, `Dang restart ${cfg.label}...`);
+  }
+
+  if (hasLiveProcess) {
+    stopService({ key, keepExpectedRunning: true, silentStatus: silentStopStatus });
+    setTimeout(() => spawnService({ key, expectedRunning: true }), 1500);
+  } else {
+    spawnService({ key, expectedRunning: true });
+  }
+}
+
 function updatePackage({ pkg, label, onProgress, onDone }) {
   const proc = spawn('cmd.exe', ['/c', 'npm', 'install', '-g', pkg], { windowsHide: true });
-  proc.stdout.on('data', (d) => onProgress({ label, message: d.toString() }));
-  proc.stderr.on('data', (d) => onProgress({ label, message: d.toString() }));
+  proc.stdout.on('data', (data) => onProgress({ label, message: data.toString() }));
+  proc.stderr.on('data', (data) => onProgress({ label, message: data.toString() }));
   proc.on('close', (code) => onDone({ success: code === 0, label, code }));
 }
 
-function killAll() {
-  if (processes.router)   try { processes.router.kill();   } catch (e) {}
-  if (processes.openclaw) try { processes.openclaw.kill(); } catch (e) {}
+async function queryProcessStats(ids) {
+  if (!ids.length) return [];
+
+  const script = [
+    "$ErrorActionPreference='SilentlyContinue'",
+    `$list = Get-Process -Id ${ids.join(',')} | Select-Object Id, CPU, WorkingSet64`,
+    'if ($list) { $list | ConvertTo-Json -Compress }'
+  ].join('; ');
+
+  const stdout = await execCommand(`powershell -NoProfile -Command "${script.replace(/"/g, '\\"')}"`);
+  if (!stdout) return [];
+
+  try {
+    const parsed = JSON.parse(stdout);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (err) {
+    return [];
+  }
 }
 
-module.exports = { getStatus, spawnService, stopService, updatePackage, killAll };
+async function getProcessMetrics({ cpuCount = 1 } = {}) {
+  const keys = Object.keys(processInfo);
+  const ids = keys.map((key) => processInfo[key].pid).filter(Boolean);
+  const samples = await queryProcessStats(ids);
+  const byId = new Map(samples.map((item) => [item.Id, item]));
+  const now = Date.now();
+  const totalMem = os.totalmem();
+
+  return keys.reduce((acc, key) => {
+    const pid = processInfo[key].pid;
+    const sample = pid ? byId.get(pid) : null;
+    const running = !!sample && (processInfo[key].expectedRunning || !!processes[key] || !!processInfo[key].externalPid);
+
+    if (!sample || !running) {
+      delete metricSamples[key];
+      acc[key] = { cpu: 0, ram: 0, pid: pid || null, running: false };
+      return acc;
+    }
+
+    const cpuSeconds = Number(sample.CPU || 0);
+    const workingSet = Number(sample.WorkingSet64 || 0);
+    const prev = metricSamples[key];
+
+    let cpu = 0;
+    if (prev && prev.pid === pid && now > prev.ts) {
+      const elapsedSeconds = (now - prev.ts) / 1000;
+      cpu = ((cpuSeconds - prev.cpuSeconds) / Math.max(elapsedSeconds, 0.001) / Math.max(cpuCount, 1)) * 100;
+    }
+
+    metricSamples[key] = { pid, cpuSeconds, ts: now };
+    acc[key] = {
+      cpu: Number(Math.max(0, Math.min(cpu, 100)).toFixed(1)),
+      ram: Number(((workingSet / totalMem) * 100).toFixed(1)),
+      pid,
+      running: true
+    };
+    return acc;
+  }, {});
+}
+
+function setAutoHealEnabled(enabled) {
+  autoHealEnabled = !!enabled;
+}
+
+async function monitorServices() {
+  if (!autoHealEnabled) return;
+
+  const entries = Object.entries(processInfo);
+  const checks = await Promise.all(entries.map(([, info]) => checkPort(info.port)));
+
+  for (let index = 0; index < entries.length; index += 1) {
+    const [key, info] = entries[index];
+    const portResult = checks[index];
+
+    if (!info.expectedRunning) {
+      info.unresponsiveSince = null;
+      continue;
+    }
+
+    if (portResult.listening) {
+      info.unresponsiveSince = null;
+      continue;
+    }
+
+    if (!info.unresponsiveSince) {
+      info.unresponsiveSince = Date.now();
+      continue;
+    }
+
+    if (Date.now() - info.unresponsiveSince >= 30000) {
+      info.unresponsiveSince = Date.now();
+      await attemptAutoHeal(key, 'khong phan hoi hon 30s');
+    }
+  }
+}
+
+function ensureMonitor() {
+  if (monitorTimer) return;
+  monitorTimer = setInterval(() => {
+    monitorServices().catch(() => {});
+  }, 5000);
+}
+
+function killAll() {
+  autoHealEnabled = false;
+  Object.keys(processes).forEach((key) => {
+    processInfo[key].expectedRunning = false;
+    processInfo[key].stopping = true;
+    if (processes[key]) {
+      try {
+        processes[key].kill();
+      } catch (err) {}
+    }
+  });
+}
+
+ensureMonitor();
+
+module.exports = {
+  getStatus,
+  getProcessMetrics,
+  killAll,
+  registerService,
+  restartService,
+  setAutoHealEnabled,
+  spawnService,
+  stopService,
+  updatePackage
+};

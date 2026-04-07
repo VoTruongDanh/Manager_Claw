@@ -6,6 +6,7 @@ const SETTINGS_PATH = path.join(app.getPath('userData'), 'settings.json');
 
 const DEFAULTS = {
   autoLaunch:        false,
+  autoHeal:          false,
   autoStartRouter:   false,
   autoStartOpenclaw: false,
   minimizeToTray:    true,

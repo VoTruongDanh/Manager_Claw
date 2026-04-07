@@ -20,6 +20,7 @@ function markClean() {
 function getCurrentState() {
   return {
     autoLaunch:        ui.$('setting-auto-launch').checked,
+    autoHeal:          ui.$('setting-auto-heal').checked,
     startMinimized:    ui.$('setting-start-minimized').checked,
     autoStartRouter:   ui.$('setting-auto-router').checked,
     autoStartOpenclaw: ui.$('setting-auto-openclaw').checked,
@@ -35,6 +36,7 @@ function isDirty() {
 function init() {
   ipcRenderer.on('settings-data', (_, s) => {
     ui.$('setting-auto-launch').checked     = !!s.autoLaunch;
+    ui.$('setting-auto-heal').checked       = !!s.autoHeal;
     ui.$('setting-start-minimized').checked = !!s.startMinimized;
     ui.$('setting-auto-router').checked     = !!s.autoStartRouter;
     ui.$('setting-auto-openclaw').checked   = !!s.autoStartOpenclaw;
@@ -54,14 +56,15 @@ function init() {
     ui.$('app-version-text').textContent = `v${v}`;
   });
 
-  // Track changes on all checkboxes
-  ['setting-auto-launch', 'setting-start-minimized', 'setting-auto-router', 'setting-auto-openclaw', 'setting-minimize-tray'].forEach(id => {
+  ['setting-auto-launch', 'setting-auto-heal', 'setting-start-minimized', 'setting-auto-router', 'setting-auto-openclaw', 'setting-minimize-tray'].forEach(id => {
     const el = ui.$(id);
     if (el) el.addEventListener('change', () => { if (isDirty()) markDirty(); else markClean(); });
   });
 
   ui.$('save-settings-btn').addEventListener('click', () => {
-    ipcRenderer.send('save-settings', getCurrentState());
+    const current = getCurrentState();
+    ipcRenderer.send('set-auto-heal', current.autoHeal);
+    ipcRenderer.send('save-settings', current);
   });
 }
 

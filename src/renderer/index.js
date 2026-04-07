@@ -4,6 +4,7 @@ const ui             = require('./ui');
 const state          = require('./state');
 const dashboard      = require('./views/dashboard');
 const logsView       = require('./views/logs');
+const metricsView    = require('./views/metrics');
 const settingsView   = require('./views/settings');
 const shutdownView   = require('./views/tools/shutdown');
 const logPanel       = require('./components/logPanel');
@@ -22,6 +23,7 @@ ui.$('theme-toggle').addEventListener('click', () => {
 // ─── Navigation ───────────────────────────────────────────────────────────────
 const views = {
   dashboard: ui.$('view-dashboard'),
+  metrics:   ui.$('view-metrics'),
   logs:      ui.$('view-logs'),
   settings:  ui.$('view-settings'),
   shutdown:  ui.$('view-shutdown')
@@ -41,6 +43,7 @@ function switchView(name) {
 }
 
 ui.$('nav-dashboard').addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
+ui.$('nav-metrics').addEventListener('click',   (e) => { e.preventDefault(); switchView('metrics'); });
 ui.$('nav-logs').addEventListener('click',      (e) => { e.preventDefault(); switchView('logs'); });
 ui.$('nav-settings').addEventListener('click',  (e) => { e.preventDefault(); switchView('settings'); settingsView.load(); });
 ui.$('nav-shutdown').addEventListener('click',  (e) => { e.preventDefault(); switchView('shutdown'); });
@@ -52,6 +55,7 @@ ui.$('open-openclaw-web').addEventListener('click', () => ipcRenderer.send('open
 // ─── Init modules ─────────────────────────────────────────────────────────────
 dashboard.init();
 logsView.init();
+metricsView.init();
 settingsView.init();
 shutdownView.init();
 logPanel.initLogPanels(['router', 'openclaw']);
