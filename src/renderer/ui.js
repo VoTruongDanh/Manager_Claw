@@ -189,7 +189,7 @@ function ensureButtonContentLayer(btn) {
 function initRipple() {
   document.addEventListener('mousedown', (e) => {
     const btn = e.target.closest('.btn');
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     ensureButtonContentLayer(btn);
     const rect   = btn.getBoundingClientRect();
     const size   = Math.max(rect.width, rect.height);

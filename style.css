@@ -362,6 +362,7 @@ body {
 /* ─── Buttons ────────────────────────────────────────────────────────────────── */
 .btn {
   --ripple-color: rgba(255,255,255,.2);
+  --btn-fg: inherit;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -377,9 +378,32 @@ body {
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  color: var(--btn-fg);
+  text-decoration: none;
+  background-clip: padding-box;
 }
 
 .btn:active { transform: scale(.97); }
+
+.btn:focus,
+.btn:focus-visible,
+.btn:active {
+  color: var(--btn-fg);
+  text-decoration: none;
+}
+
+.btn:focus { outline: none; }
+
+.btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
 
 .btn-content {
   position: relative;
@@ -388,20 +412,23 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .btn-sm { padding: 7px 12px; font-size: 12.5px; }
 
-.btn-success { background: var(--green);  color: #fff; border-color: var(--green); }
+.btn-success { --btn-fg: #fff; background: var(--green); color: var(--btn-fg); border-color: var(--green); }
 .btn-success:hover { background: #15803d; }
 
-.btn-danger  { background: var(--red);    color: #fff; border-color: var(--red); }
+.btn-danger  { --btn-fg: #fff; background: var(--red); color: var(--btn-fg); border-color: var(--red); }
 .btn-danger:hover  { background: #b91c1c; }
 
 .btn-secondary {
+  --btn-fg: var(--text);
   --ripple-color: rgba(0,0,0,.1);
   background: var(--surface-2);
-  color: var(--text);
+  color: var(--btn-fg);
   border-color: var(--border);
 }
 .btn-secondary:hover { background: var(--border); }
@@ -436,20 +463,47 @@ body {
 }
 
 .btn-icon {
+  --btn-fg: var(--text-2);
   width: 30px; height: 30px;
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--text-2);
+  color: var(--btn-fg);
   border-radius: var(--r);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background .15s, color .15s;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  text-decoration: none;
+  background-clip: padding-box;
 }
 
-.btn-icon:hover { background: var(--surface-2); color: var(--text); }
+.btn-icon:hover {
+  --btn-fg: var(--text);
+  background: var(--surface-2);
+  color: var(--btn-fg);
+}
+
+.btn-icon:focus,
+.btn-icon:focus-visible,
+.btn-icon:active {
+  color: var(--btn-fg);
+  text-decoration: none;
+}
+
+.btn-icon:focus { outline: none; }
+
+.btn-icon:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
 
 /* ─── Alert ─────────────────────────────────────────────────────────────────── */
 .alert {
@@ -678,6 +732,7 @@ body {
   will-change: transform, opacity;
   animation: ripple-anim var(--animation-slow) cubic-bezier(.2,.7,.25,1) forwards;
   pointer-events: none;
+  contain: paint;
 }
 
 @keyframes ripple-anim {
