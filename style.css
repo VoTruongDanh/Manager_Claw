@@ -361,6 +361,7 @@ body {
 
 /* ─── Buttons ────────────────────────────────────────────────────────────────── */
 .btn {
+  --ripple-color: rgba(255,255,255,.2);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -388,6 +389,7 @@ body {
 .btn-danger:hover  { background: #b91c1c; }
 
 .btn-secondary {
+  --ripple-color: rgba(0,0,0,.1);
   background: var(--surface-2);
   color: var(--text);
   border-color: var(--border);
@@ -659,9 +661,12 @@ body {
 .ripple {
   position: absolute;
   border-radius: 50%;
-  background: rgba(255,255,255,.3);
+  background: var(--ripple-color, rgba(255,255,255,.2));
   transform: scale(0);
-  animation: ripple-anim 500ms linear forwards;
+  opacity: .9;
+  mix-blend-mode: overlay;
+  will-change: transform, opacity;
+  animation: ripple-anim var(--animation-slow) cubic-bezier(.2,.7,.25,1) forwards;
   pointer-events: none;
 }
 
@@ -1570,19 +1575,6 @@ body {
 }
 
 /* ─── Ripple ─────────────────────────────────────────────────────────────────── */
-.ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255,255,255,.3);
-  transform: scale(0);
-  animation: ripple-anim var(--animation-slow) linear;
-  pointer-events: none;
-}
-
-@keyframes ripple-anim {
-  to { transform: scale(4); opacity: 0; }
-}
-
 /* ─── View transition ────────────────────────────────────────────────────────── */
 .view-enter {
   animation: viewEnter var(--animation-normal) var(--ease);
