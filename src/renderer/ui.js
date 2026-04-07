@@ -32,7 +32,6 @@ function formatUptime(ms) {
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function showToast(msg, type = 'info') {
-  document.querySelectorAll(`.toast.${type}`).forEach(t => t.remove());
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = msg;
@@ -41,6 +40,10 @@ function showToast(msg, type = 'info') {
     toast.classList.add('dismissing');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+function dismissToasts(type) {
+  document.querySelectorAll(`.toast.${type}`).forEach(t => t.remove());
 }
 
 // ─── Badge / status ───────────────────────────────────────────────────────────
@@ -197,7 +200,7 @@ function initSkeletons(names) {
 
 module.exports = {
   $, escapeHtml, detectLogType, formatUptime,
-  showToast, setStatus, updateMetrics, toggleButtons,
+  showToast, dismissToasts, setStatus, updateMetrics, toggleButtons,
   showProgress, hideProgress, showAlert, dismissAlert,
   addLog, addCombinedLog, clearLog,
   initRipple, initSkeletons, logUnread

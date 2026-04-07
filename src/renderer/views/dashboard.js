@@ -101,8 +101,16 @@ function handleServiceStatus(name, data) {
   ui.addLog(ui.$(`${name}-log`), data.message, logType);
   ui.addCombinedLog(label, data.message, logType);
 
-  if (data.running && !data.error) ui.showToast(`${label} đang chạy`, 'success');
-  else if (data.error) { ui.showToast(data.message, 'error'); ui.showAlert(name, data.message); }
+  // Xóa toast "đang khởi động" cũ trước khi hiện toast mới
+  if (data.running && !data.error) {
+    ui.dismissToasts('info');
+    ui.showToast(`${label} đang chạy`, 'success');
+  }
+  else if (data.error) {
+    ui.dismissToasts('info');
+    ui.showToast(data.message, 'error');
+    ui.showAlert(name, data.message);
+  }
   else ui.dismissAlert(name);
 }
 
