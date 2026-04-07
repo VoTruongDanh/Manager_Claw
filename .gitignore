@@ -35,6 +35,7 @@ Thumbs.db
 desktop.ini
 
 # IDE / Editor
+.kiro/
 .vscode/
 .idea/
 *.swp
