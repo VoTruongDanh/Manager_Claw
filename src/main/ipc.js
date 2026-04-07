@@ -1,5 +1,6 @@
 const { exec } = require('child_process');
 const shutdownTools = require('./tools/shutdown');
+const idmTools = require('./tools/idm-reset');
 
 const SERVICE_CONFIGS = {
   router: {
@@ -141,6 +142,15 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
 
   ipcMain.on('shutdown-now', async () => {
     await shutdownTools.shutdownNow();
+  });
+
+  // IDM Trial Reset handlers
+  ipcMain.handle('idm-reset-trial', async () => {
+    return await idmTools.resetIDMTrial();
+  });
+
+  ipcMain.handle('idm-check-running', async () => {
+    return await idmTools.checkIDMRunning();
   });
 
   return { broadcastStatus };

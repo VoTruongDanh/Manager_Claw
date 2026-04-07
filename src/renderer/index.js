@@ -6,6 +6,7 @@ const dashboard      = require('./views/dashboard');
 const logsView       = require('./views/logs');
 const settingsView   = require('./views/settings');
 const shutdownView   = require('./views/tools/shutdown');
+const idmResetView   = require('./views/tools/idm-reset');
 const logPanel       = require('./components/logPanel');
 const commandPalette = require('./components/commandPalette');
 
@@ -24,7 +25,8 @@ const views = {
   dashboard: ui.$('view-dashboard'),
   logs:      ui.$('view-logs'),
   settings:  ui.$('view-settings'),
-  shutdown:  ui.$('view-shutdown')
+  shutdown:  ui.$('view-shutdown'),
+  idmReset:  ui.$('view-idm-reset')
 };
 
 function switchView(name) {
@@ -44,6 +46,7 @@ ui.$('nav-dashboard').addEventListener('click', (e) => { e.preventDefault(); swi
 ui.$('nav-logs').addEventListener('click',      (e) => { e.preventDefault(); switchView('logs'); });
 ui.$('nav-settings').addEventListener('click',  (e) => { e.preventDefault(); switchView('settings'); settingsView.load(); });
 ui.$('nav-shutdown').addEventListener('click',  (e) => { e.preventDefault(); switchView('shutdown'); });
+ui.$('nav-idm-reset').addEventListener('click', (e) => { e.preventDefault(); switchView('idmReset'); });
 
 // ─── Sidebar quick links ──────────────────────────────────────────────────────
 ui.$('open-router-web').addEventListener('click',   () => ipcRenderer.send('open-browser', 'http://localhost:20128'));
@@ -54,6 +57,7 @@ dashboard.init();
 logsView.init();
 settingsView.init();
 shutdownView.init();
+idmResetView.init();
 logPanel.initLogPanels(['router', 'openclaw']);
 logPanel.initLogFilters();
 ui.initRipple();

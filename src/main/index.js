@@ -27,9 +27,13 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, '../../index.html'));
 
+  // Mở DevTools trong development
+  // mainWindow.webContents.openDevTools();
+
   // Log lỗi từ renderer ra console
   mainWindow.webContents.on('console-message', (e, level, message, line, sourceId) => {
     if (level >= 2) console.error(`[Renderer] ${message} (${sourceId}:${line})`);
+    else console.log(`[Renderer] ${message}`);
   });
   mainWindow.webContents.on('did-fail-load', (e, code, desc) => {
     console.error(`[Load failed] ${code}: ${desc}`);
@@ -45,7 +49,10 @@ function createWindow() {
   mainWindow.on('move',   saveBounds);
 
   mainWindow.once('ready-to-show', async () => {
-    if (!settings.startMinimized) mainWindow.show();
+    if (!settings.startMinimized) {
+      mainWindow.maximize();
+      mainWindow.show();
+    }
     if (broadcastStatus) broadcastStatus();
 
     setTimeout(async () => {
@@ -83,6 +90,7 @@ app.whenReady().then(() => {
   globalShortcut.register('CommandOrControl+2',       () => mainWindow && mainWindow.webContents.send('tray-start-openclaw'));
   globalShortcut.register('CommandOrControl+Shift+1', () => mainWindow && mainWindow.webContents.send('tray-stop-router'));
   globalShortcut.register('CommandOrControl+Shift+2', () => mainWindow && mainWindow.webContents.send('tray-stop-openclaw'));
+  globalShortcut.register('F12', () => mainWindow && mainWindow.webContents.toggleDevTools());
 
   statusInterval = setInterval(() => broadcastStatus(), 5000);
 });

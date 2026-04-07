@@ -1841,3 +1841,196 @@ body {
   padding-top: 4px;
   border-top: 1px solid var(--border);
 }
+
+/* ─── IDM Reset ──────────────────────────────────────────────────────────────── */
+.idm-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-light), var(--blue));
+  color: white;
+  margin-bottom: 16px;
+}
+
+.idm-status {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--r);
+  text-align: center;
+  margin-top: 12px;
+  transition: all 0.3s;
+}
+
+.idm-status.checking {
+  background: var(--blue-light);
+  color: var(--blue);
+  animation: pulse 1.5s infinite;
+}
+
+.idm-status.running {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.idm-status.stopped {
+  background: var(--gray-light);
+  color: var(--text-3);
+}
+
+.idm-status.success {
+  background: var(--green-light);
+  color: var(--green);
+}
+
+.idm-status.error {
+  background: var(--red-light);
+  color: var(--red);
+}
+
+.idm-info-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+}
+
+.idm-info-box h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 12px 0;
+}
+
+.idm-info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+}
+
+.idm-info-list li {
+  font-size: 13px;
+  color: var(--text-2);
+  padding: 4px 0;
+  line-height: 1.5;
+}
+
+.idm-warning {
+  font-size: 12px;
+  color: var(--amber);
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--amber-light);
+  border-radius: var(--r);
+  border-left: 3px solid var(--amber);
+}
+
+/* Steps */
+.idm-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+.idm-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+  opacity: 0.5;
+}
+
+.idm-step.running {
+  opacity: 1;
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.idm-step.success {
+  opacity: 1;
+  border-color: var(--green);
+  background: var(--green-light);
+}
+
+.idm-step.error {
+  opacity: 1;
+  border-color: var(--red);
+  background: var(--red-light);
+}
+
+.idm-step-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-3);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.idm-step.running .idm-step-icon {
+  background: var(--blue);
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+.idm-step.success .idm-step-icon {
+  background: var(--green);
+  color: white;
+}
+
+.idm-step.error .idm-step-icon {
+  background: var(--red);
+  color: white;
+}
+
+.idm-step-content {
+  flex: 1;
+}
+
+.idm-step-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.idm-step-desc {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.idm-step.running .idm-step-title,
+.idm-step.success .idm-step-title,
+.idm-step.error .idm-step-title {
+  color: var(--text);
+}
+
+/* Spin animation for loading icon */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}

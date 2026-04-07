@@ -42,6 +42,12 @@
           </svg>
           <span>Hẹn giờ tắt</span>
         </a>
+        <a href="#" class="nav-item" id="nav-idm-reset">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+          </svg>
+          <span>Reset IDM</span>
+        </a>
       </nav>
       <div class="sidebar-links">
         <button class="sidebar-link" id="open-router-web" title="Mở 9Router Dashboard" data-tooltip="http://localhost:20128">
@@ -496,6 +502,111 @@
               <button class="btn btn-secondary" id="shutdown-now-btn">
                 <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v6a1 1 0 11-2 0V3a1 1 0 011-1zm4.243 2.757a1 1 0 011.415 0A8 8 0 1110 2a1 1 0 110 2 6 6 0 100 12 6 6 0 000-12 1 1 0 110-2 8 8 0 014.243 2.757z" clip-rule="evenodd"/></svg>
                 Tắt ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IDM Reset view -->
+      <div id="view-idm-reset" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Reset IDM Trial</h1>
+            <p class="subtitle">Đặt lại thời gian dùng thử của Internet Download Manager</p>
+          </div>
+        </header>
+
+        <div class="shutdown-layout">
+          <div class="shutdown-countdown-card">
+            <div class="idm-icon-wrapper">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+            </div>
+            <div class="idm-status" id="idm-status">Chưa kiểm tra</div>
+            <button class="btn btn-secondary" id="idm-check-btn" style="margin-top: 1rem;">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+              </svg>
+              Kiểm tra IDM
+            </button>
+
+            <!-- Progress indicator -->
+            <div class="progress progress-indeterminate" id="idm-progress" style="display:none; width: 100%; margin-top: 1rem;">
+              <div class="progress-bar"></div>
+            </div>
+          </div>
+
+          <div class="shutdown-controls-card">
+            <div class="idm-info-box">
+              <h3>Tính năng này sẽ:</h3>
+              <ul class="idm-info-list">
+                <li>✓ Tắt IDM nếu đang chạy</li>
+                <li>✓ Xóa registry keys (ConfigTime, MData)</li>
+                <li>✓ Reset giá trị Thread và Model</li>
+                <li>✓ Xóa folder cấu hình %appdata%\IDM</li>
+              </ul>
+              <p class="idm-warning">⚠️ Sau khi reset, khởi động lại IDM để áp dụng.</p>
+            </div>
+
+            <!-- Steps progress -->
+            <div class="idm-steps" id="idm-steps" style="display:none;">
+              <div class="idm-step" id="idm-step-1">
+                <div class="idm-step-icon">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm2 6a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <div class="idm-step-content">
+                  <div class="idm-step-title">Tắt IDM processes</div>
+                  <div class="idm-step-desc">Dừng IDMan.exe và IEMonitor.exe</div>
+                </div>
+              </div>
+
+              <div class="idm-step" id="idm-step-2">
+                <div class="idm-step-icon">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/>
+                  </svg>
+                </div>
+                <div class="idm-step-content">
+                  <div class="idm-step-title">Xóa registry keys</div>
+                  <div class="idm-step-desc">ConfigTime, MData</div>
+                </div>
+              </div>
+
+              <div class="idm-step" id="idm-step-3">
+                <div class="idm-step-icon">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clip-rule="evenodd"/><path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H2h2a2 2 0 002-2v-2z"/>
+                  </svg>
+                </div>
+                <div class="idm-step-content">
+                  <div class="idm-step-title">Xóa folder cấu hình</div>
+                  <div class="idm-step-desc">%appdata%\IDM</div>
+                </div>
+              </div>
+
+              <div class="idm-step" id="idm-step-4">
+                <div class="idm-step-icon">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <div class="idm-step-content">
+                  <div class="idm-step-title">Hoàn tất</div>
+                  <div class="idm-step-desc">Reset thành công</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="shutdown-actions">
+              <button class="btn btn-success" id="idm-reset-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                </svg>
+                Reset IDM Trial
               </button>
             </div>
           </div>
