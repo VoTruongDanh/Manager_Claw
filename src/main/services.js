@@ -1,10 +1,8 @@
 const { spawn, exec } = require('child_process');
-const os = require('os');
 
 const processes = {};
 const serviceConfigs = {};
 const serviceHooks = {};
-const metricSamples = {};
 const autoHealHistory = {};
 
 const processInfo = {
@@ -44,14 +42,6 @@ function checkPort(port) {
   });
 }
 
-function execCommand(command) {
-  return new Promise((resolve) => {
-    exec(command, { windowsHide: true, maxBuffer: 1024 * 1024 }, (err, stdout) => {
-      resolve(err ? '' : (stdout || '').trim());
-    });
-  });
-}
-
 function getHooks(key) {
   return serviceHooks[key] || {};
 }
@@ -86,7 +76,6 @@ function resetRuntime(key, { clearExpectation = false } = {}) {
   processInfo[key].externalPid = null;
   processInfo[key].stopping = false;
   processInfo[key].unresponsiveSince = null;
-  delete metricSamples[key];
   if (clearExpectation) processInfo[key].expectedRunning = false;
 }
 
@@ -327,66 +316,6 @@ function updatePackage({ pkg, label, onProgress, onDone }) {
   proc.on('close', (code) => onDone({ success: code === 0, label, code }));
 }
 
-async function queryProcessStats(ids) {
-  if (!ids.length) return [];
-
-  const script = [
-    "$ErrorActionPreference='SilentlyContinue'",
-    `$list = Get-Process -Id ${ids.join(',')} | Select-Object Id, CPU, WorkingSet64`,
-    'if ($list) { $list | ConvertTo-Json -Compress }'
-  ].join('; ');
-
-  const stdout = await execCommand(`powershell -NoProfile -Command "${script.replace(/"/g, '\\"')}"`);
-  if (!stdout) return [];
-
-  try {
-    const parsed = JSON.parse(stdout);
-    return Array.isArray(parsed) ? parsed : [parsed];
-  } catch (err) {
-    return [];
-  }
-}
-
-async function getProcessMetrics({ cpuCount = 1 } = {}) {
-  const keys = Object.keys(processInfo);
-  const ids = keys.map((key) => processInfo[key].pid).filter(Boolean);
-  const samples = await queryProcessStats(ids);
-  const byId = new Map(samples.map((item) => [item.Id, item]));
-  const now = Date.now();
-  const totalMem = os.totalmem();
-
-  return keys.reduce((acc, key) => {
-    const pid = processInfo[key].pid;
-    const sample = pid ? byId.get(pid) : null;
-    const running = !!sample && (processInfo[key].expectedRunning || !!processes[key] || !!processInfo[key].externalPid);
-
-    if (!sample || !running) {
-      delete metricSamples[key];
-      acc[key] = { cpu: 0, ram: 0, pid: pid || null, running: false };
-      return acc;
-    }
-
-    const cpuSeconds = Number(sample.CPU || 0);
-    const workingSet = Number(sample.WorkingSet64 || 0);
-    const prev = metricSamples[key];
-
-    let cpu = 0;
-    if (prev && prev.pid === pid && now > prev.ts) {
-      const elapsedSeconds = (now - prev.ts) / 1000;
-      cpu = ((cpuSeconds - prev.cpuSeconds) / Math.max(elapsedSeconds, 0.001) / Math.max(cpuCount, 1)) * 100;
-    }
-
-    metricSamples[key] = { pid, cpuSeconds, ts: now };
-    acc[key] = {
-      cpu: Number(Math.max(0, Math.min(cpu, 100)).toFixed(1)),
-      ram: Number(((workingSet / totalMem) * 100).toFixed(1)),
-      pid,
-      running: true
-    };
-    return acc;
-  }, {});
-}
-
 function setAutoHealEnabled(enabled) {
   autoHealEnabled = !!enabled;
 }
@@ -447,7 +376,6 @@ ensureMonitor();
 
 module.exports = {
   getStatus,
-  getProcessMetrics,
   killAll,
   registerService,
   restartService,

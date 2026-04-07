@@ -1,5 +1,4 @@
 const { exec } = require('child_process');
-const os = require('os');
 const shutdownTools = require('./tools/shutdown');
 
 const SERVICE_CONFIGS = {
@@ -96,19 +95,6 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
   });
 
   ipcMain.on('get-app-version', (event) => event.reply('app-version', app.getVersion()));
-
-  ipcMain.on('get-process-metrics', async (event) => {
-    const totalMem = os.totalmem();
-    const appMemory = process.memoryUsage();
-    const metrics = await services.getProcessMetrics({ cpuCount: os.cpus().length });
-
-    event.reply('process-metrics', {
-      app: {
-        ram: Number(((appMemory.rss / totalMem) * 100).toFixed(1))
-      },
-      services: metrics
-    });
-  });
 
   ipcMain.on('open-browser', (_, url) => shell.openExternal(url));
   ipcMain.on('open-folder', (_, folderPath) => exec(`explorer "${folderPath}"`, () => {}));
