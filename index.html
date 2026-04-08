@@ -719,14 +719,18 @@
                 <h2>Danh sách link</h2>
                 <p>Link được ghim luôn nằm trên cùng, kèm preview title/favicon.</p>
               </div>
-              <label class="library-sort">
-                <span class="library-label">Sắp xếp</span>
-                <select id="link-sort" class="shutdown-select">
-                  <option value="unread">Chưa đọc trước</option>
-                  <option value="latest">Mới cập nhật</option>
-                  <option value="name">Tên A-Z</option>
-                </select>
-              </label>
+              <div class="library-list-tools">
+                <button class="btn btn-secondary btn-sm" type="button" id="link-export-btn">Xuất JSON</button>
+                <button class="btn btn-secondary btn-sm" type="button" id="link-import-btn">Nhập JSON</button>
+                <label class="library-sort">
+                  <span class="library-label">Sắp xếp</span>
+                  <select id="link-sort" class="shutdown-select">
+                    <option value="unread">Chưa đọc trước</option>
+                    <option value="latest">Mới cập nhật</option>
+                    <option value="name">Tên A-Z</option>
+                  </select>
+                </label>
+              </div>
             </div>
             <div class="library-list" id="link-list"></div>
           </section>

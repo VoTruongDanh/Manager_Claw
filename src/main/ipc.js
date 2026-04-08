@@ -544,6 +544,51 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
     return await syncLinksFromCsv(settings);
   });
 
+  ipcMain.handle('link-export', async () => {
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Xuất danh sách link',
+      defaultPath: `manager-links-${new Date().toISOString().split('T')[0]}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    });
+
+    if (!filePath) return { cancelled: true };
+
+    const fs = require('fs');
+    fs.writeFileSync(filePath, JSON.stringify(settings.links, null, 2), 'utf-8');
+    return { ok: true, path: filePath };
+  });
+
+  ipcMain.handle('link-import', async () => {
+    const { filePaths } = await dialog.showOpenDialog({
+      title: 'Nhập danh sách link',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+      properties: ['openFile']
+    });
+
+    if (!filePaths || filePaths.length === 0) return { cancelled: true };
+
+    const fs = require('fs');
+    const content = fs.readFileSync(filePaths[0], 'utf-8');
+    const importedLinks = JSON.parse(content);
+
+    if (!Array.isArray(importedLinks)) {
+      throw new Error('Định dạng file không hợp lệ (phải là một mảng link)');
+    }
+
+    const current = Array.isArray(settings.links) ? [...settings.links] : [];
+    const merged = mergeLinksByUrl(current, importedLinks);
+    
+    settings.links = merged.links;
+    persistSettings(settings);
+
+    return { 
+      ok: true, 
+      importedCount: importedLinks.length, 
+      addedCount: merged.addedCount,
+      duplicateCount: merged.duplicateCount
+    };
+  });
+
   ipcMain.handle('prompt-save', (_, prompt) => {
     const now = Date.now();
     const current = Array.isArray(settings.prompts) ? [...settings.prompts] : [];

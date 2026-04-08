@@ -2426,6 +2426,12 @@ body {
   background: var(--surface-2);
 }
 
+.library-list-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .library-sort {
   min-width: 160px;
   display: flex;

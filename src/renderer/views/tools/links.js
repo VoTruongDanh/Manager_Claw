@@ -18,6 +18,8 @@ function init() {
     render();
   });
   ui.$('link-list').addEventListener('click', handleListClick);
+  ui.$('link-export-btn').addEventListener('click', handleExport);
+  ui.$('link-import-btn').addEventListener('click', handleImport);
 
   ui.$('link-sync-settings-btn').addEventListener('click', openSyncModal);
   ui.$('link-sync-close-btn').addEventListener('click', closeSyncModal);
@@ -86,6 +88,39 @@ async function handleSyncSubmit(event) {
     ui.showToast(error.message, 'error');
   } finally {
     setButtonBusy(submitBtn, false);
+  }
+}
+
+async function handleExport() {
+  const exportBtn = ui.$('link-export-btn');
+  try {
+    setButtonBusy(exportBtn, true);
+    const result = await ipcRenderer.invoke('link-export');
+    if (result?.cancelled) return;
+    ui.showToast(`Đã xuất file: ${result.path}`, 'success');
+  } catch (error) {
+    ui.showToast(`Không xuất được file: ${error.message}`, 'error');
+  } finally {
+    setButtonBusy(exportBtn, false);
+  }
+}
+
+async function handleImport() {
+  const importBtn = ui.$('link-import-btn');
+  try {
+    setButtonBusy(importBtn, true);
+    const result = await ipcRenderer.invoke('link-import');
+    if (result?.cancelled) return;
+
+    await load({ sync: false, silent: true });
+    ui.showToast(
+      `Đã nhập ${result.importedCount || 0} link, thêm ${result.addedCount || 0}, bỏ qua ${result.duplicateCount || 0} trùng`,
+      'success'
+    );
+  } catch (error) {
+    ui.showToast(`Không nhập được file: ${error.message}`, 'error');
+  } finally {
+    setButtonBusy(importBtn, false);
   }
 }
 
