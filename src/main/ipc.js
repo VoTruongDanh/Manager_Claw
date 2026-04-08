@@ -1,7 +1,9 @@
 const { exec } = require('child_process');
+const zlib = require('zlib');
 const shutdownTools = require('./tools/shutdown');
 const idmTools      = require('./tools/idm-reset');
 const anydeskTools  = require('./tools/anydesk-reset');
+const syncToken = require('./syncToken');
 
 const SERVICE_CONFIGS = {
   router: {
@@ -148,9 +150,47 @@ async function fetchLinkPreview(url, name) {
   const fallback = {
     title: sanitizePreviewText(name, parsedUrl.hostname),
     favicon: null,
+    thumbnail: null,
     hostname: parsedUrl.hostname,
     fetchedAt: Date.now()
   };
+
+  const linkPreviewApiKey = normalizeText(process.env.LINKPREVIEW_API_KEY);
+
+  if (linkPreviewApiKey) {
+    try {
+      const endpoint = new URL('https://api.linkpreview.net/');
+      endpoint.searchParams.set('key', linkPreviewApiKey);
+      endpoint.searchParams.set('q', url);
+
+      const response = await fetchWithTimeout(endpoint.toString(), {
+        headers: { accept: 'application/json' }
+      }, 6000);
+
+      if (response.ok) {
+        const data = await response.json();
+        const title = sanitizePreviewText(data?.title, fallback.title);
+        const image = normalizeText(data?.image);
+        const finalUrl = normalizeText(data?.url) || url;
+        const finalParsed = new URL(finalUrl);
+
+        let favicon = normalizeText(data?.favicon);
+        if (!favicon) {
+          try {
+            favicon = new URL('/favicon.ico', finalUrl).toString();
+          } catch (_) {}
+        }
+
+        return {
+          title,
+          favicon: favicon || null,
+          thumbnail: image || null,
+          hostname: sanitizePreviewText(finalParsed.hostname, fallback.hostname),
+          fetchedAt: Date.now()
+        };
+      }
+    } catch (_) {}
+  }
 
   try {
     const response = await fetchWithTimeout(url, {
@@ -170,6 +210,7 @@ async function fetchLinkPreview(url, name) {
     return {
       title,
       favicon,
+      thumbnail: null,
       hostname: finalParsed.hostname,
       fetchedAt: Date.now()
     };
@@ -403,6 +444,25 @@ function normalizePrompt(input = {}, now = Date.now()) {
   };
 }
 
+function detectLinkCategory(urlText = '') {
+  const url = normalizeText(urlText).toLowerCase();
+
+  if (/docs\.google\.com\/spreadsheets|sheets|excel|\.xlsx?|\.csv/.test(url)) return 'sheet';
+  if (/github\.com|gitlab\.com|bitbucket\.org|vercel\.com|netlify\.app/.test(url)) return 'tool';
+  if (/youtube\.com|youtu\.be|facebook\.com|tiktok\.com|instagram\.com|x\.com|twitter\.com/.test(url)) return 'social';
+  if (/notion\.so|confluence|wiki|docs\./.test(url)) return 'study';
+  if (/trello\.com|jira|asana|slack\.com/.test(url)) return 'work';
+
+  return 'auto';
+}
+
+function normalizeCategory(value, fallback = 'auto') {
+  const allowed = new Set(['auto', 'work', 'study', 'tool', 'sheet', 'social', 'other']);
+  const normalized = normalizeText(value).toLowerCase();
+  if (allowed.has(normalized)) return normalized;
+  return allowed.has(fallback) ? fallback : 'auto';
+}
+
 function normalizeLink(input = {}, now = Date.now()) {
   const name = normalizeText(input.name);
   const url = normalizeText(input.url);
@@ -420,16 +480,21 @@ function normalizeLink(input = {}, now = Date.now()) {
     throw new Error('Chỉ hỗ trợ link http hoặc https');
   }
 
+  const autoCategory = detectLinkCategory(parsedUrl.toString());
+  const category = normalizeCategory(input.category, autoCategory);
+
   const preview = input.preview && typeof input.preview === 'object'
     ? {
         title: sanitizePreviewText(input.preview.title, name || parsedUrl.hostname),
         favicon: normalizeText(input.preview.favicon) || null,
+        thumbnail: normalizeText(input.preview.thumbnail) || null,
         hostname: sanitizePreviewText(input.preview.hostname, parsedUrl.hostname),
         fetchedAt: input.preview.fetchedAt || now
       }
     : {
         title: name,
         favicon: null,
+        thumbnail: null,
         hostname: parsedUrl.hostname,
         fetchedAt: now
       };
@@ -440,6 +505,7 @@ function normalizeLink(input = {}, now = Date.now()) {
     url: parsedUrl.toString(),
     read: !!input.read,
     pinned: !!input.pinned,
+    category,
     preview,
     createdAt: input.createdAt || now,
     updatedAt: now
@@ -448,6 +514,20 @@ function normalizeLink(input = {}, now = Date.now()) {
 
 function persistSettings(settings) {
   settings._save();
+}
+
+function sanitizeSettingsForSync(settings) {
+  return {
+    autoLaunch: !!settings.autoLaunch,
+    autoHeal: !!settings.autoHeal,
+    autoStartRouter: !!settings.autoStartRouter,
+    autoStartOpenclaw: !!settings.autoStartOpenclaw,
+    minimizeToTray: settings.minimizeToTray !== false,
+    startMinimized: !!settings.startMinimized,
+    prompts: Array.isArray(settings.prompts) ? settings.prompts : [],
+    links: Array.isArray(settings.links) ? settings.links : [],
+    sync_url: normalizeText(settings.sync_url)
+  };
 }
 
 function register({ ipcMain, app, shell, settings, services, tray, getWindow }) {
@@ -492,13 +572,15 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
       autoStartRouter: settings.autoStartRouter,
       autoStartOpenclaw: settings.autoStartOpenclaw,
       minimizeToTray: settings.minimizeToTray,
+      sync_token: normalizeText(settings.sync_token),
+      sync_meta: settings.sync_meta || null,
       _path: settings._settingsPath || ''
     });
   });
 
   ipcMain.on('save-settings', (event, newSettings) => {
     const wasAutoLaunch = settings.autoLaunch;
-    const keys = ['autoLaunch', 'autoHeal', 'startMinimized', 'autoStartRouter', 'autoStartOpenclaw', 'minimizeToTray'];
+    const keys = ['autoLaunch', 'autoHeal', 'startMinimized', 'autoStartRouter', 'autoStartOpenclaw', 'minimizeToTray', 'sync_token'];
 
     keys.forEach((key) => {
       if (newSettings[key] !== undefined) settings[key] = newSettings[key];
@@ -543,6 +625,84 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
 
   ipcMain.handle('link-sync-now', async () => {
     return await syncLinksFromCsv(settings);
+  });
+
+  ipcMain.handle('token-sync-upload', async () => {
+    const tokenRaw = normalizeText(settings.sync_token);
+    if (!tokenRaw) throw new Error('Bạn chưa nhập sync token');
+
+    const parsed = syncToken.parseUploadthingToken(tokenRaw);
+    if (!parsed.apiKey) throw new Error('Token không chứa apiKey hợp lệ');
+
+    const payload = sanitizeSettingsForSync(settings);
+    const hash = syncToken.hashObject(payload);
+
+    if (settings.sync_meta && settings.sync_meta.hash === hash) {
+      return { ok: true, skipped: true, reason: 'unchanged', sync_meta: settings.sync_meta };
+    }
+
+    const fileBuffer = syncToken.encodeSettingsBlob(payload);
+    const fileName = syncToken.buildSyncFileName(parsed.appId || 'app');
+    const presign = await syncToken.createUploadthingPresign({
+      apiKey: parsed.apiKey,
+      fileName,
+      fileBuffer,
+      metadata: {
+        appId: parsed.appId || '',
+        kind: 'settings-sync',
+        hash
+      }
+    });
+
+    await syncToken.uploadToPresignedUrl(presign.url, fileName, fileBuffer);
+
+    settings.sync_meta = {
+      fileKey: presign.key || '',
+      hash,
+      appId: parsed.appId || '',
+      regions: parsed.regions || [],
+      uploadedAt: Date.now()
+    };
+    persistSettings(settings);
+
+    return { ok: true, skipped: false, sync_meta: settings.sync_meta };
+  });
+
+  ipcMain.handle('token-sync-download', async () => {
+    const tokenRaw = normalizeText(settings.sync_token);
+    if (!tokenRaw) throw new Error('Bạn chưa nhập sync token');
+    if (!settings.sync_meta || !settings.sync_meta.fileKey) {
+      throw new Error('Chưa có metadata sync để tải xuống');
+    }
+
+    const parsed = syncToken.parseUploadthingToken(tokenRaw);
+    if (!parsed.apiKey) throw new Error('Token không chứa apiKey hợp lệ');
+
+    const fileUrl = await syncToken.getFileUrlByKey({
+      apiKey: parsed.apiKey,
+      fileKey: settings.sync_meta.fileKey
+    });
+
+    const response = await fetch(fileUrl);
+    if (!response.ok) throw new Error(`Tải file sync thất bại (${response.status})`);
+
+    const compressed = Buffer.from(await response.arrayBuffer());
+    const raw = zlib.gunzipSync(compressed).toString('utf8');
+    const data = JSON.parse(raw);
+
+    const incomingHash = syncToken.hashObject(data);
+    if (settings.sync_meta.hash && incomingHash !== settings.sync_meta.hash) {
+      throw new Error('Hash không khớp, dữ liệu sync có thể bị lỗi');
+    }
+
+    const keys = ['autoLaunch', 'autoHeal', 'startMinimized', 'autoStartRouter', 'autoStartOpenclaw', 'minimizeToTray', 'prompts', 'links', 'sync_url'];
+    keys.forEach((key) => {
+      if (data[key] !== undefined) settings[key] = data[key];
+    });
+
+    persistSettings(settings);
+
+    return { ok: true, applied: true, sync_meta: settings.sync_meta };
   });
 
   ipcMain.handle('link-export', async () => {

@@ -4,6 +4,7 @@ const ui = require('../../ui');
 let links = [];
 let editingId = null;
 let currentSort = 'unread';
+let currentFilter = 'all';
 let syncUrl = '';
 
 function init() {
@@ -15,6 +16,10 @@ function init() {
   ui.$('link-refresh-btn').addEventListener('click', handleRefresh);
   ui.$('link-sort').addEventListener('change', (event) => {
     currentSort = event.target.value;
+    render();
+  });
+  ui.$('link-filter').addEventListener('change', (event) => {
+    currentFilter = event.target.value;
     render();
   });
   ui.$('link-list').addEventListener('click', handleListClick);
@@ -67,30 +72,6 @@ async function handleRefresh() {
   setButtonBusy(refreshBtn, false);
 }
 
-async function handleSyncSubmit(event) {
-  event.preventDefault();
-
-  const form = ui.$('link-sync-form');
-  const submitBtn = form.querySelector('button[type="submit"]');
-
-  try {
-    setButtonBusy(submitBtn, true);
-    const result = await ipcRenderer.invoke('link-sync-save', ui.$('link-sync-url').value.trim());
-    syncUrl = result.sync_url || '';
-    syncInputWithState();
-
-    const syncResult = await load({ sync: true, silent: true });
-    if (!syncResult) return;
-
-    closeSyncModal();
-    ui.showToast(formatSyncMessage(syncResult), syncResult.skipped ? 'info' : 'success');
-  } catch (error) {
-    ui.showToast(error.message, 'error');
-  } finally {
-    setButtonBusy(submitBtn, false);
-  }
-}
-
 async function handleExport() {
   const exportBtn = ui.$('link-export-btn');
   try {
@@ -138,6 +119,7 @@ async function handleSubmit(event) {
       id: editingId,
       name: ui.$('link-name').value.trim(),
       url: ui.$('link-url').value.trim(),
+      category: ui.$('link-category').value || '',
       read: ui.$('link-read').checked
     });
 
@@ -205,6 +187,7 @@ async function handleListClick(event) {
     ui.$('link-name').value = link.name;
     ui.$('link-url').value = link.url;
     ui.$('link-read').checked = !!link.read;
+    ui.$('link-category').value = link.category || '';
     ui.$('link-form-title').textContent = 'Chỉnh sửa link';
     ui.$('link-form-desc').textContent = 'Cập nhật link và hệ thống sẽ làm mới preview nếu URL thay đổi.';
     ui.$('link-submit-label').textContent = 'Lưu thay đổi';
@@ -244,6 +227,30 @@ function handleKeydown(event) {
   }
 }
 
+async function handleSyncSubmit(event) {
+  event.preventDefault();
+
+  const form = ui.$('link-sync-form');
+  const submitBtn = form.querySelector('button[type="submit"]');
+
+  try {
+    setButtonBusy(submitBtn, true);
+    const result = await ipcRenderer.invoke('link-sync-save', ui.$('link-sync-url').value.trim());
+    syncUrl = result.sync_url || '';
+    syncInputWithState();
+
+    const syncResult = await load({ sync: true, silent: true });
+    if (!syncResult) return;
+
+    closeSyncModal();
+    ui.showToast(formatSyncMessage(syncResult), syncResult.skipped ? 'info' : 'success');
+  } catch (error) {
+    ui.showToast(error.message, 'error');
+  } finally {
+    setButtonBusy(submitBtn, false);
+  }
+}
+
 function syncInputWithState() {
   const input = ui.$('link-sync-url');
   if (!input) return;
@@ -253,6 +260,7 @@ function syncInputWithState() {
 function resetForm() {
   editingId = null;
   ui.$('link-form').reset();
+  ui.$('link-category').value = '';
   ui.$('link-form-title').textContent = 'Lưu link mới';
   ui.$('link-form-desc').textContent = 'Lưu link với title/favicon để quét nhanh trong danh sách.';
   ui.$('link-submit-label').textContent = 'Lưu link';
@@ -266,7 +274,8 @@ function render() {
   ui.$('link-unread-count').textContent = `${unreadCount} chưa đọc`;
   ui.$('link-sync-settings-btn').title = syncUrl || 'Chưa cấu hình Google Sheets CSV';
 
-  if (!links.length) {
+  const filtered = filterLinks(links, currentFilter);
+  if (!filtered.length) {
     list.innerHTML = `
       <div class="library-empty">
         <div class="library-empty-icon">L</div>
@@ -277,7 +286,7 @@ function render() {
     return;
   }
 
-  list.innerHTML = sortLinks(links, currentSort).map((link) => `
+  list.innerHTML = sortLinks(filtered, currentSort).map((link) => `
     <article class="library-item link-item ${link.read ? 'is-read' : 'is-unread'} ${link.pinned ? 'is-pinned' : ''}" data-id="${link.id}">
       <div class="link-thumbnail">
         ${renderThumbnail(link)}
@@ -288,7 +297,10 @@ function render() {
             <h3>${ui.escapeHtml(link.name)}</h3>
             ${link.pinned ? '<span class="link-pin-indicator">Pinned</span>' : ''}
           </div>
-          <span class="badge ${link.read ? 'badge-secondary' : 'badge-warning'}">${link.read ? 'Đã đọc' : 'Chưa đọc'}</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <span class="badge badge-secondary">${getCategoryLabel(link.category)}</span>
+            <span class="badge ${link.read ? 'badge-secondary' : 'badge-warning'}">${link.read ? 'Đã đọc' : 'Chưa đọc'}</span>
+          </div>
         </div>
         <a href="#" class="library-link" data-action="open">${ui.escapeHtml(link.url)}</a>
         <div class="library-meta-row">
@@ -338,15 +350,46 @@ function setButtonBusy(button, busy) {
 }
 
 function renderThumbnail(link) {
+  const image = link?.preview?.thumbnail;
+  if (image) {
+    return `<img src="${escapeAttr(image)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
+  }
+
   const icon = link?.preview?.favicon;
   if (icon) {
     return `<img src="${escapeAttr(icon)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
   }
+
+  const category = (link?.category || '').toLowerCase();
+  if (category === 'sheet') {
+    return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:22px;border-radius:8px">SHEET</div>`;
+  }
+
   const host = getPreviewHost(link);
   const letter = host ? host.replace('www.', '').charAt(0).toUpperCase() : 'L';
   const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
   const color = colors[Math.floor(Math.random() * colors.length)];
   return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:800;font-size:32px;border-radius:8px">${letter}</div>`;
+}
+
+function filterLinks(items, filterKey) {
+  if (!Array.isArray(items)) return [];
+  if (!filterKey || filterKey === 'all') return [...items];
+  return items.filter((item) => (item?.category || 'auto') === filterKey);
+}
+
+function getCategoryLabel(category) {
+  const key = (category || 'auto').toLowerCase();
+  const map = {
+    auto: 'Tự động',
+    work: 'Công việc',
+    study: 'Học tập',
+    tool: 'Tool/Dev',
+    sheet: 'Sheet/Excel',
+    social: 'Mạng XH',
+    other: 'Khác'
+  };
+  return map[key] || 'Tự động';
 }
 
 function sortLinks(items, sortKey) {

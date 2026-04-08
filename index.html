@@ -766,6 +766,18 @@
                 <span class="library-label">Link</span>
                 <input id="link-url" class="library-input" type="url" placeholder="https://..." required>
               </label>
+              <label class="library-field">
+                <span class="library-label">Phân loại</span>
+                <select id="link-category" class="shutdown-select">
+                  <option value="">Tự động phân loại</option>
+                  <option value="work">Công việc</option>
+                  <option value="study">Học tập</option>
+                  <option value="tool">Tool/Dev</option>
+                  <option value="sheet">Sheet/Excel</option>
+                  <option value="social">Mạng xã hội</option>
+                  <option value="other">Khác</option>
+                </select>
+              </label>
               <label class="toggle-row library-toggle-row">
                 <span class="toggle-label">
                   <strong>Đánh dấu đã đọc</strong>
@@ -792,6 +804,19 @@
               <div class="library-list-tools">
                 <button class="btn btn-secondary btn-sm" type="button" id="link-export-btn">Xuất JSON</button>
                 <button class="btn btn-secondary btn-sm" type="button" id="link-import-btn">Nhập JSON</button>
+                <label class="library-sort">
+                  <span class="library-label">Bộ lọc</span>
+                  <select id="link-filter" class="shutdown-select">
+                    <option value="all">Tất cả</option>
+                    <option value="auto">Tự động</option>
+                    <option value="work">Công việc</option>
+                    <option value="study">Học tập</option>
+                    <option value="tool">Tool/Dev</option>
+                    <option value="sheet">Sheet/Excel</option>
+                    <option value="social">Mạng xã hội</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </label>
                 <label class="library-sort">
                   <span class="library-label">Sắp xếp</span>
                   <select id="link-sort" class="shutdown-select">

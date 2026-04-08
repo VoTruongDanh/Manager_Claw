@@ -12,6 +12,8 @@ const DEFAULTS = {
   minimizeToTray:    true,
   startMinimized:    false,
   sync_url:          '',
+  sync_token:        '',
+  sync_meta:         null,
   prompts:           [],
   links:             []
 };
