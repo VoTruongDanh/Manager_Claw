@@ -181,8 +181,8 @@ function spawnService(config = {}) {
     processInfo[cfg.key].pid = proc.pid;
     processInfo[cfg.key].startTime = Date.now();
 
-    // OpenClaw cần thời gian khởi động lâu hơn (5-6s), Router nhanh hơn (2-3s)
-    const startTimeoutDuration = cfg.key === 'openclaw' ? 8000 : 3000;
+    // OpenClaw cần thời gian khởi động lâu hơn (20-25s), Router nhanh hơn (2-3s)
+    const startTimeoutDuration = cfg.key === 'openclaw' ? 25000 : 3000;
     const startTimeout = setTimeout(async () => {
       const check = await checkPort(processInfo[cfg.key].port);
       if (!check.listening) {
