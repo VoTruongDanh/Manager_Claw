@@ -20,6 +20,14 @@ function init() {
 
   let isBusy = false;
 
+  function getFriendlyResetMessage(result) {
+    if (!result) return 'Reset AnyDesk that bai.';
+    if (result.needsAdmin) {
+      return result.error || 'Can chay app bang Administrator de reset AnyDesk installed-service mode.';
+    }
+    return result.error || 'Reset AnyDesk that bai.';
+  }
+
   function setStatus(cls, text) {
     statusEl.textContent = text;
     statusEl.className = `idm-status-badge ${cls}`;
@@ -84,8 +92,9 @@ function init() {
 
     if (!confirm(
       'Reset AnyDesk ID?\n\n' +
-      '• service.conf sẽ bị xóa → ID mới được cấp\n' +
-      '• user.conf được GIỮ NGUYÊN → tài khoản liên kết không mất\n\n' +
+      '• Các file config chứa ID sẽ bị xóa → ID mới được cấp\n' +
+      '• user.conf được GIỮ NGUYÊN → tài khoản liên kết không mất\n' +
+      '• Neu AnyDesk dang cai service, ban can mo app bang Administrator\n\n' +
       'Bạn có chắc chắn?'
     )) return;
 
@@ -108,7 +117,7 @@ function init() {
 
       showStep(2, 'success');
       showStep(3, 'running');
-      setStatus('checking', 'Đang xóa service.conf...');
+      setStatus('checking', 'Đang xóa config chứa ID...');
 
       const result = await ipcRenderer.invoke('anydesk-reset-id');
 
@@ -129,8 +138,12 @@ function init() {
         }, 3000);
       } else {
         showStep(3, 'error');
-        setStatus('error', `Lỗi: ${result.error}`);
-        ui.showToast(`Lỗi: ${result.error}`, 'error');
+        const message = getFriendlyResetMessage(result);
+        setStatus('error', message);
+        ui.showToast(message, result.needsAdmin ? 'warning' : 'error');
+        if (result.needsAdmin) {
+          idText.textContent = 'ID: can chay app bang Administrator de reset installed-service mode';
+        }
         setTimeout(() => { progressEl.style.display = 'none'; stepsEl.style.display = 'none'; }, 3000);
       }
     } catch (err) {

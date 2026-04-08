@@ -22,7 +22,8 @@
     "appId": "com.clawrouter.manager",
     "win": {
       "target": "nsis",
-      "icon": "icon.ico"
+      "icon": "icon.ico",
+      "requestedExecutionLevel": "requireAdministrator"
     }
   }
 }
