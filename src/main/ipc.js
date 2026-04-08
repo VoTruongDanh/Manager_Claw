@@ -25,6 +25,126 @@ function normalizeText(value) {
   return String(value || '').trim();
 }
 
+function sanitizePreviewText(value, fallback = '') {
+  return String(value || fallback || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 180);
+}
+
+function decodeHtmlEntities(value) {
+  return String(value || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)));
+}
+
+function extractTitle(html) {
+  const match = String(html || '').match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  return match ? decodeHtmlEntities(match[1]) : '';
+}
+
+function extractFaviconHref(html) {
+  const tags = String(html || '').match(/<link\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    const relMatch = tag.match(/\brel\s*=\s*["']?([^"' >]+(?:\s+[^"' >]+)*)["']?/i);
+    const hrefMatch = tag.match(/\bhref\s*=\s*["']([^"']+)["']/i) || tag.match(/\bhref\s*=\s*([^"' >]+)/i);
+    const rel = relMatch ? relMatch[1].toLowerCase() : '';
+    const href = hrefMatch ? hrefMatch[1] : '';
+    if (href && rel.includes('icon')) return href;
+  }
+  return '';
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 4500) {
+  if (typeof fetch !== 'function') {
+    throw new Error('Fetch API is unavailable');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      redirect: 'follow',
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'user-agent': 'ServiceManager/1.0 LinkPreview',
+        ...options.headers
+      }
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchFaviconDataUrl(iconUrl) {
+  try {
+    const response = await fetchWithTimeout(iconUrl, {
+      headers: { accept: 'image/*,*/*;q=0.8' }
+    }, 3500);
+
+    if (!response.ok) return null;
+
+    const declaredLength = Number(response.headers.get('content-length') || 0);
+    if (declaredLength && declaredLength > 65536) return iconUrl;
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length > 65536) return iconUrl;
+
+    const contentType = (response.headers.get('content-type') || 'image/x-icon').split(';')[0];
+    return `data:${contentType};base64,${buffer.toString('base64')}`;
+  } catch (_) {
+    return iconUrl;
+  }
+}
+
+async function fetchLinkPreview(url, name) {
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch (_) {
+    return null;
+  }
+
+  const fallback = {
+    title: sanitizePreviewText(name, parsedUrl.hostname),
+    favicon: null,
+    hostname: parsedUrl.hostname,
+    fetchedAt: Date.now()
+  };
+
+  try {
+    const response = await fetchWithTimeout(url, {
+      headers: { accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.1' }
+    });
+
+    if (!response.ok) return fallback;
+
+    const finalUrl = response.url || url;
+    const finalParsed = new URL(finalUrl);
+    const html = await response.text();
+    const title = sanitizePreviewText(extractTitle(html), fallback.title || finalParsed.hostname);
+    const iconHref = extractFaviconHref(html);
+    const iconUrl = new URL(iconHref || '/favicon.ico', finalUrl).toString();
+    const favicon = await fetchFaviconDataUrl(iconUrl);
+
+    return {
+      title,
+      favicon,
+      hostname: finalParsed.hostname,
+      fetchedAt: Date.now()
+    };
+  } catch (_) {
+    return fallback;
+  }
+}
+
 function normalizePrompt(input = {}, now = Date.now()) {
   const name = normalizeText(input.name);
   const content = String(input.content || '').trim();
@@ -57,11 +177,27 @@ function normalizeLink(input = {}, now = Date.now()) {
     throw new Error('Chỉ hỗ trợ link http hoặc https');
   }
 
+  const preview = input.preview && typeof input.preview === 'object'
+    ? {
+        title: sanitizePreviewText(input.preview.title, name || parsedUrl.hostname),
+        favicon: normalizeText(input.preview.favicon) || null,
+        hostname: sanitizePreviewText(input.preview.hostname, parsedUrl.hostname),
+        fetchedAt: input.preview.fetchedAt || now
+      }
+    : {
+        title: name,
+        favicon: null,
+        hostname: parsedUrl.hostname,
+        fetchedAt: now
+      };
+
   return {
     id: input.id || `link_${now}_${Math.random().toString(36).slice(2, 8)}`,
     name,
     url: parsedUrl.toString(),
     read: !!input.read,
+    pinned: !!input.pinned,
+    preview,
     createdAt: input.createdAt || now,
     updatedAt: now
   };
@@ -181,13 +317,20 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
     return { ok: true, prompts: settings.prompts };
   });
 
-  ipcMain.handle('link-save', (_, link) => {
+  ipcMain.handle('link-save', async (_, link) => {
     const now = Date.now();
     const current = Array.isArray(settings.links) ? [...settings.links] : [];
     const existing = link && link.id ? current.find(item => item.id === link.id) : null;
+    const nextUrl = normalizeText(link?.url);
+    const shouldRefreshPreview = !existing || existing.url !== nextUrl || !existing.preview;
+    const preview = shouldRefreshPreview
+      ? await fetchLinkPreview(nextUrl, link?.name)
+      : existing.preview;
+
     const normalized = normalizeLink({
       ...existing,
       ...link,
+      preview: preview || existing?.preview,
       createdAt: existing?.createdAt || link?.createdAt
     }, now);
 
@@ -215,6 +358,21 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
     settings.links = current.map((item) => {
       if (item.id !== id) return item;
       updatedLink = { ...item, read: !!read, updatedAt: now };
+      return updatedLink;
+    });
+
+    persistSettings(settings);
+    return { ok: true, link: updatedLink, links: settings.links };
+  });
+
+  ipcMain.handle('link-toggle-pin', (_, { id, pinned }) => {
+    const now = Date.now();
+    const current = Array.isArray(settings.links) ? settings.links : [];
+    let updatedLink = null;
+
+    settings.links = current.map((item) => {
+      if (item.id !== id) return item;
+      updatedLink = { ...item, pinned: !!pinned, updatedAt: now };
       return updatedLink;
     });
 
@@ -266,7 +424,6 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
     await shutdownTools.shutdownNow();
   });
 
-  // IDM Trial Reset handlers
   ipcMain.handle('idm-reset-trial', async () => {
     return await idmTools.resetIDMTrial();
   });

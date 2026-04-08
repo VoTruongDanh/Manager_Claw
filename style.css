@@ -2037,10 +2037,7 @@ body {
 
 /* ─── Reset Workspace ───────────────────────────────────────────────────────── */
 .reset-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 16px;
-  align-items: start;
+  display: block;
 }
 
 .reset-card,
@@ -2059,6 +2056,11 @@ body {
   gap: 18px;
 }
 
+.reset-card.reset-card-compact {
+  padding: 16px;
+  gap: 12px;
+}
+
 .reset-card-header {
   display: flex;
   justify-content: space-between;
@@ -2074,8 +2076,8 @@ body {
 }
 
 .reset-card-intro h2 {
-  font-size: 18px;
-  margin-bottom: 6px;
+  font-size: 16px;
+  margin-bottom: 4px;
 }
 
 .reset-card-intro p,
@@ -2086,11 +2088,16 @@ body {
   line-height: 1.6;
 }
 
+.reset-card-compact .reset-card-intro p {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .reset-card-status {
-  min-width: 220px;
+  min-width: 188px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   align-items: stretch;
 }
 
@@ -2104,14 +2111,14 @@ body {
 .reset-tool-chip {
   display: inline-flex;
   align-items: center;
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: var(--blue-subtle);
   color: var(--blue);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: .3px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .reset-card-grid {
@@ -2168,9 +2175,9 @@ body {
 }
 
 .idm-icon-wrapper {
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: linear-gradient(135deg, var(--text), #3f3f46);
   color: #fff;
   margin-bottom: 0;
@@ -2182,6 +2189,8 @@ body {
   background: var(--surface-2);
   color: var(--text-2);
   border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 .idm-status.checking {
@@ -2240,12 +2249,14 @@ body {
 }
 
 .idm-steps {
-  padding: 18px;
-  gap: 10px;
+  padding: 12px;
+  gap: 8px;
 }
 
 .idm-step {
   opacity: .72;
+  padding: 8px 10px;
+  gap: 10px;
 }
 
 .idm-step.running {
@@ -2258,6 +2269,59 @@ body {
 
 .idm-step.error {
   background: var(--red-subtle);
+}
+
+.reset-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.reset-mini-pill,
+.reset-mini-note {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.reset-mini-pill {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.reset-mini-note {
+  color: var(--text-2);
+  background: var(--amber-subtle);
+  border: 1px solid rgba(217,119,6,.18);
+}
+
+.reset-card-compact .progress {
+  margin-top: -2px;
+}
+
+.reset-card-compact .reset-card-actions {
+  gap: 6px;
+}
+
+.reset-card-compact .idm-step-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.reset-card-compact .idm-step-title {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+
+.reset-card-compact .idm-step-desc {
+  font-size: 10.5px;
 }
 
 /* ─── Prompt / Link Workspace ──────────────────────────────────────────────── */
@@ -2429,6 +2493,81 @@ body {
 .library-item-head h3 {
   font-size: 15px;
   margin-bottom: 6px;
+}
+
+.link-item.is-pinned {
+  border-color: rgba(37,99,235,.28);
+  background: linear-gradient(180deg, var(--blue-subtle), var(--surface));
+}
+
+.link-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.link-pin-indicator {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(37,99,235,.14);
+  color: var(--blue);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.link-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  min-width: 0;
+}
+
+.link-preview-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid rgba(0,0,0,.08);
+  background: var(--surface-2);
+}
+
+.link-preview-icon.is-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.link-preview-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+
+.library-pin-btn {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.library-pin-btn.is-active {
+  --btn-fg: var(--blue);
+  background: rgba(37,99,235,.1);
+  border-color: rgba(37,99,235,.2);
+  color: var(--blue);
 }
 
 .library-meta,

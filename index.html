@@ -528,66 +528,57 @@
         <header class="header">
           <div>
             <h1>Reset</h1>
-            <p class="subtitle">Gom các công cụ reset vào một khu vực gọn, rõ trạng thái và sẵn chỗ để mở rộng thêm.</p>
+            <p class="subtitle">Reset nhanh các công cụ.</p>
           </div>
         </header>
 
         <div class="reset-layout">
-          <section class="reset-card" id="idm-reset-card">
+          <section class="reset-card reset-card-compact" id="idm-reset-card">
             <div class="reset-card-header">
               <div class="reset-card-intro">
                 <div class="idm-icon-wrapper">
-                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
                     <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                   </svg>
                 </div>
                 <div>
                   <div class="reset-tool-chip">IDM Trial</div>
-                  <h2>Reset Internet Download Manager</h2>
-                  <p>Kiểm tra nhanh trạng thái IDM, reset trial và theo dõi tiến trình từng bước trong cùng một card gọn.</p>
+                  <h2>Reset IDM</h2>
+                  <p>Kiểm tra, reset và theo dõi tiến trình.</p>
                 </div>
               </div>
               <div class="reset-card-status">
                 <div class="idm-status" id="idm-status">Chưa kiểm tra</div>
                 <div class="reset-card-actions">
-                  <button class="btn btn-secondary" id="idm-check-btn">
+                  <button class="btn btn-secondary btn-sm" id="idm-check-btn">
                     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
                     </svg>
-                    Kiểm tra IDM
+                    Kiểm tra
                   </button>
-                  <button class="btn btn-success" id="idm-reset-btn">
+                  <button class="btn btn-success btn-sm" id="idm-reset-btn">
                     <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
                     </svg>
-                    Reset trial
+                    Reset
                   </button>
                 </div>
               </div>
             </div>
 
-            <div class="reset-card-grid">
-              <div class="reset-info-box">
-                <div class="reset-info-block">
-                  <span class="reset-block-label">Thao tác</span>
-                  <ul class="idm-info-list">
-                    <li>Đóng IDM nếu đang chạy</li>
-                    <li>Xóa registry keys `ConfigTime` và `MData`</li>
-                    <li>Reset giá trị `Thread` và `Model`</li>
-                    <li>Xóa thư mục cấu hình `%appdata%\\IDM`</li>
-                  </ul>
-                </div>
-                <div class="reset-info-block">
-                  <span class="reset-block-label">Lưu ý</span>
-                  <p class="idm-warning">Sau khi reset, hãy mở lại IDM để áp dụng trạng thái trial mới.</p>
-                </div>
-                <div class="progress progress-indeterminate" id="idm-progress" style="display:none;">
-                  <div class="progress-bar"></div>
-                </div>
-              </div>
+            <div class="reset-summary-row">
+              <span class="reset-mini-pill">Kill process</span>
+              <span class="reset-mini-pill">Registry trial</span>
+              <span class="reset-mini-pill">%appdata%\\IDM</span>
+              <span class="reset-mini-note">Mở lại IDM sau khi reset.</span>
+            </div>
 
-              <div class="idm-steps" id="idm-steps" style="display:none;">
-                <div class="reset-block-label">Tiến trình</div>
+            <div class="progress progress-indeterminate" id="idm-progress" style="display:none;">
+              <div class="progress-bar"></div>
+            </div>
+
+            <div class="idm-steps" id="idm-steps" style="display:none;">
+              <div class="reset-block-label">Tiến trình</div>
               <div class="idm-step" id="idm-step-1">
                 <div class="idm-step-icon">
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -595,8 +586,8 @@
                   </svg>
                 </div>
                 <div class="idm-step-content">
-                  <div class="idm-step-title">Tắt IDM processes</div>
-                  <div class="idm-step-desc">Dừng IDMan.exe và IEMonitor.exe</div>
+                  <div class="idm-step-title">Tắt IDM</div>
+                  <div class="idm-step-desc">IDMan.exe, IEMonitor.exe</div>
                 </div>
               </div>
 
@@ -607,7 +598,7 @@
                   </svg>
                 </div>
                 <div class="idm-step-content">
-                  <div class="idm-step-title">Xóa registry keys</div>
+                  <div class="idm-step-title">Xóa registry</div>
                   <div class="idm-step-desc">ConfigTime, MData</div>
                 </div>
               </div>
@@ -619,7 +610,7 @@
                   </svg>
                 </div>
                 <div class="idm-step-content">
-                  <div class="idm-step-title">Xóa folder cấu hình</div>
+                  <div class="idm-step-title">Xóa cấu hình</div>
                   <div class="idm-step-desc">%appdata%\IDM</div>
                 </div>
               </div>
@@ -632,23 +623,11 @@
                 </div>
                 <div class="idm-step-content">
                   <div class="idm-step-title">Hoàn tất</div>
-                  <div class="idm-step-desc">Reset thành công</div>
+                  <div class="idm-step-desc">Mở lại IDM</div>
                 </div>
               </div>
             </div>
-            </div>
           </section>
-
-          <aside class="reset-extension-card">
-            <div class="reset-extension-icon">
-              <svg width="28" height="28" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v3H6a1 1 0 100 2h3v3a1 1 0 102 0v-3h3a1 1 0 100-2h-3V6z" clip-rule="evenodd"/>
-              </svg>
-            </div>
-            <h3>Khu vực mở rộng</h3>
-            <p>Card này dành sẵn cho các công cụ reset khác trong tương lai như reset cache, reset network hoặc reset config.</p>
-            <span class="badge badge-outline">Sẵn sàng mở rộng</span>
-          </aside>
         </div>
       </div>
 
@@ -704,7 +683,7 @@
         <header class="header">
           <div>
             <h1>Link</h1>
-            <p class="subtitle">Lưu link để đọc sau, ưu tiên chưa đọc lên trên và chuyển trạng thái cực nhanh.</p>
+            <p class="subtitle">Lưu link, ghim link quan trọng và xem preview nhanh.</p>
           </div>
           <div class="header-right">
             <span class="badge badge-warning" id="link-unread-count">0 chưa đọc</span>
@@ -718,7 +697,7 @@
             <div class="library-card-head">
               <div>
                 <h2 id="link-form-title">Lưu link mới</h2>
-                <p id="link-form-desc">Gom link cần đọc vào một chỗ, có trạng thái để xử lý nhanh.</p>
+                <p id="link-form-desc">Lưu link với title/favicon để quét nhanh trong danh sách.</p>
               </div>
             </div>
             <form id="link-form" class="library-form">
@@ -751,7 +730,7 @@
             <div class="library-card-head">
               <div>
                 <h2>Danh sách link</h2>
-                <p>Giữ trạng thái đọc rõ ràng, mở nhanh và sắp xếp theo nhu cầu.</p>
+                <p>Link được ghim luôn nằm trên cùng, kèm preview title/favicon.</p>
               </div>
               <label class="library-sort">
                 <span class="library-label">Sắp xếp</span>
