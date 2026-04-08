@@ -2269,7 +2269,7 @@ body {
   line-height: 1.6;
 }
 
-.idm-steps {
+.idm-steps-legacy {
   display: none !important; /* Hide step details in horizontal compact layout */
 }
 
@@ -3496,3 +3496,11 @@ body {
 
 .idm-schedule-sep { opacity: .4; }
 #idm-next-reset-text { color: var(--text-2); }
+
+/* ─── Reset tools grid ───────────────────────────────────────────────────────── */
+.reset-tools-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+}

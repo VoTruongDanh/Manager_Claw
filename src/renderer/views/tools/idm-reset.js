@@ -44,7 +44,6 @@ function formatNextReset(lastReset, days) {
 
 function updateSchedulerUI(schedule) {
   const toggle = ui.$('idm-auto-toggle');
-  const body = ui.$('idm-scheduler-body');
   const daysInput = ui.$('idm-auto-days');
   const lastEl = ui.$('idm-last-reset-text');
   const nextEl = ui.$('idm-next-reset-text');
@@ -52,13 +51,11 @@ function updateSchedulerUI(schedule) {
   if (!toggle) return;
 
   toggle.checked = schedule.enabled;
-  daysInput.value = schedule.days;
-  lastEl.textContent = formatDate(schedule.lastReset);
-  nextEl.textContent = schedule.enabled
+  if (daysInput) daysInput.value = schedule.days;
+  if (lastEl) lastEl.textContent = formatDate(schedule.lastReset);
+  if (nextEl) nextEl.textContent = schedule.enabled
     ? formatNextReset(schedule.lastReset, schedule.days)
-    : 'Bật tự động để xem lịch tiếp theo';
-
-  body.classList.toggle('disabled', !schedule.enabled);
+    : 'Bật tự động để xem lịch';
 }
 
 function startScheduler(schedule, onReset) {
@@ -99,19 +96,29 @@ function init() {
   const daysInput = ui.$('idm-auto-days');
   const decBtn = ui.$('idm-days-dec');
   const incBtn = ui.$('idm-days-inc');
-  const saveBtn = ui.$('idm-save-schedule-btn');
 
-  decBtn.addEventListener('click', () => {
+  if (decBtn) decBtn.addEventListener('click', () => {
     const v = parseInt(daysInput.value) || 5;
     daysInput.value = Math.max(1, v - 1);
+    _saveScheduleDays();
   });
 
-  incBtn.addEventListener('click', () => {
+  if (incBtn) incBtn.addEventListener('click', () => {
     const v = parseInt(daysInput.value) || 5;
     daysInput.value = Math.min(30, v + 1);
+    _saveScheduleDays();
   });
 
-  toggle.addEventListener('change', () => {
+  function _saveScheduleDays() {
+    const days = Math.max(1, Math.min(30, parseInt(daysInput.value) || 5));
+    const s = loadSchedule();
+    s.days = days;
+    saveSchedule(s);
+    updateSchedulerUI(s);
+    if (s.enabled) startScheduler(s, doReset);
+  }
+
+  if (toggle) toggle.addEventListener('change', () => {
     const s = loadSchedule();
     s.enabled = toggle.checked;
     saveSchedule(s);
@@ -135,24 +142,24 @@ function init() {
     if (s.enabled) startScheduler(s, doReset);
     ui.showToast(`Đã lưu: reset mỗi ${days} ngày`, 'success');
   });
-
-  // Khởi động scheduler nếu đã bật
   startScheduler(schedule, doReset);
 
-  // ─── Step helpers ─────────────────────────────────────────────────────────
+  // Khởi động scheduler nếu đã bật
   function showStep(step, status = 'running') {
     const stepEl = ui.$(`idm-step-${step}`);
     if (!stepEl) return;
-    document.querySelectorAll('.idm-step').forEach(el => {
-      el.classList.remove('running', 'success', 'error');
+    // Chỉ reset steps trong IDM card, không ảnh hưởng AnyDesk
+    ['idm-step-1','idm-step-2','idm-step-3','idm-step-4'].forEach(id => {
+      const el = ui.$(id);
+      if (el) el.classList.remove('running', 'success', 'error');
     });
     stepEl.classList.add(status);
-    if (status === 'running') stepEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function resetSteps() {
-    document.querySelectorAll('.idm-step').forEach(el => {
-      el.classList.remove('running', 'success', 'error');
+    ['idm-step-1','idm-step-2','idm-step-3','idm-step-4'].forEach(id => {
+      const el = ui.$(id);
+      if (el) el.classList.remove('running', 'success', 'error');
     });
   }
 

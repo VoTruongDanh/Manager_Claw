@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const shutdownTools = require('./tools/shutdown');
-const idmTools = require('./tools/idm-reset');
+const idmTools      = require('./tools/idm-reset');
+const anydeskTools  = require('./tools/anydesk-reset');
 
 const SERVICE_CONFIGS = {
   router: {
@@ -728,6 +729,14 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
 
   ipcMain.handle('idm-check-running', async () => {
     return await idmTools.checkIDMRunning();
+  });
+
+  ipcMain.handle('anydesk-check', async () => {
+    return await anydeskTools.checkAnyDeskRunning();
+  });
+
+  ipcMain.handle('anydesk-reset-id', async () => {
+    return await anydeskTools.resetAnyDeskId();
   });
 
   return { broadcastStatus };
