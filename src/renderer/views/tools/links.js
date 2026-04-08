@@ -181,18 +181,22 @@ function render() {
           <span class="library-meta">${formatDate(link.updatedAt)}</span>
         </div>
         <div class="library-actions">
-          <button class="btn-icon library-pin-btn ${link.pinned ? 'is-active' : ''}" data-action="toggle-pin" title="${link.pinned ? 'Bỏ ghim' : 'Ghim'}">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="${link.pinned ? 'currentColor' : 'none'}" stroke="currentColor">
-              <path d="M10 2l2.5 5 5.5.5-4 3.5 1 5.5-5-3-5 3 1-5.5-4-3.5 5.5-.5L10 2z"/>
-            </svg>
-          </button>
-          <button class="btn btn-secondary btn-sm" data-action="toggle-read">${link.read ? 'Chưa đọc' : 'Xong'}</button>
-          <button class="btn-icon btn-secondary btn-sm" data-action="edit">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
-          </button>
-          <button class="btn-icon btn-danger btn-sm" data-action="delete">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-          </button>
+          <div class="library-actions-left">
+            <button class="btn-icon library-pin-btn ${link.pinned ? 'is-active' : ''}" data-action="toggle-pin" title="${link.pinned ? 'Bỏ ghim' : 'Ghim'}">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="${link.pinned ? 'currentColor' : 'none'}" stroke="currentColor">
+                <path d="M10 2l2.5 5 5.5.5-4 3.5 1 5.5-5-3-5 3 1-5.5-4-3.5 5.5-.5L10 2z"/>
+              </svg>
+            </button>
+            <button class="btn btn-secondary btn-sm" data-action="toggle-read">${link.read ? 'Chưa đọc' : 'Xong'}</button>
+          </div>
+          <div class="library-actions-right">
+            <button class="btn-icon btn-secondary btn-sm" data-action="edit">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+            </button>
+            <button class="btn-icon btn-danger btn-sm" data-action="delete">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            </button>
+          </div>
         </div>
       </div>
     </article>
@@ -202,11 +206,13 @@ function render() {
 function renderThumbnail(link) {
   const icon = link?.preview?.favicon;
   if (icon) {
-    return `<img src="${escapeAttr(icon)}" alt="" loading="lazy">`;
+    return `<img src="${escapeAttr(icon)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
   }
   const host = getPreviewHost(link);
   const letter = host ? host.replace('www.', '').charAt(0).toUpperCase() : 'L';
-  return `<span style="font-weight:700;color:var(--text-3);font-size:18px">${letter}</span>`;
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${color};color:#fff;font-weight:800;font-size:32px;border-radius:8px">${letter}</div>`;
 }
 
 function sortLinks(items, sortKey) {
