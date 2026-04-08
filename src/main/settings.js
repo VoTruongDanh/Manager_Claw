@@ -10,7 +10,9 @@ const DEFAULTS = {
   autoStartRouter:   false,
   autoStartOpenclaw: false,
   minimizeToTray:    true,
-  startMinimized:    false
+  startMinimized:    false,
+  prompts:           [],
+  links:             []
 };
 
 function load() {

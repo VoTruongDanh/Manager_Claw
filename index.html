@@ -46,7 +46,22 @@
           <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
           </svg>
-          <span>Reset IDM</span>
+          <span>Reset</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-prompts">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h7a1 1 0 000-2H4V5h12v3a1 1 0 102 0V5a2 2 0 00-2-2H4z"/>
+            <path d="M15 10a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"/>
+            <path d="M6 8a1 1 0 011-1h5a1 1 0 010 2H7A1 1 0 016 8zm0 4a1 1 0 011-1h3a1 1 0 010 2H7a1 1 0 01-1-1z"/>
+          </svg>
+          <span>Prompt</span>
+        </a>
+        <a href="#" class="nav-item" id="nav-links">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M12.586 2.586a2 2 0 012.828 0l2 2a2 2 0 010 2.828l-3.293 3.293a1 1 0 11-1.414-1.414L16 6.414 13.586 4 10.707 6.879A1 1 0 119.293 5.465l3.293-3.293zM7.414 6.586a2 2 0 010 2.828L4.535 12.293 7 14.758l2.879-2.879a1 1 0 111.414 1.414l-3.293 3.293a2 2 0 01-2.828 0l-2-2a2 2 0 010-2.828l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            <path d="M6.464 13.536a1 1 0 010-1.414l5.657-5.658a1 1 0 111.415 1.415l-5.658 5.657a1 1 0 01-1.414 0z"/>
+          </svg>
+          <span>Link</span>
         </a>
       </nav>
       <div class="sidebar-links">
@@ -512,46 +527,67 @@
       <div id="view-idm-reset" style="display:none">
         <header class="header">
           <div>
-            <h1>Reset IDM Trial</h1>
-            <p class="subtitle">Đặt lại thời gian dùng thử của Internet Download Manager</p>
+            <h1>Reset</h1>
+            <p class="subtitle">Gom các công cụ reset vào một khu vực gọn, rõ trạng thái và sẵn chỗ để mở rộng thêm.</p>
           </div>
         </header>
 
-        <div class="shutdown-layout">
-          <div class="shutdown-countdown-card">
-            <div class="idm-icon-wrapper">
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
+        <div class="reset-layout">
+          <section class="reset-card" id="idm-reset-card">
+            <div class="reset-card-header">
+              <div class="reset-card-intro">
+                <div class="idm-icon-wrapper">
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="reset-tool-chip">IDM Trial</div>
+                  <h2>Reset Internet Download Manager</h2>
+                  <p>Kiểm tra nhanh trạng thái IDM, reset trial và theo dõi tiến trình từng bước trong cùng một card gọn.</p>
+                </div>
+              </div>
+              <div class="reset-card-status">
+                <div class="idm-status" id="idm-status">Chưa kiểm tra</div>
+                <div class="reset-card-actions">
+                  <button class="btn btn-secondary" id="idm-check-btn">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                    </svg>
+                    Kiểm tra IDM
+                  </button>
+                  <button class="btn btn-success" id="idm-reset-btn">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                    </svg>
+                    Reset trial
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="idm-status" id="idm-status">Chưa kiểm tra</div>
-            <button class="btn btn-secondary" id="idm-check-btn" style="margin-top: 1rem;">
-              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-              </svg>
-              Kiểm tra IDM
-            </button>
 
-            <!-- Progress indicator -->
-            <div class="progress progress-indeterminate" id="idm-progress" style="display:none; width: 100%; margin-top: 1rem;">
-              <div class="progress-bar"></div>
-            </div>
-          </div>
+            <div class="reset-card-grid">
+              <div class="reset-info-box">
+                <div class="reset-info-block">
+                  <span class="reset-block-label">Thao tác</span>
+                  <ul class="idm-info-list">
+                    <li>Đóng IDM nếu đang chạy</li>
+                    <li>Xóa registry keys `ConfigTime` và `MData`</li>
+                    <li>Reset giá trị `Thread` và `Model`</li>
+                    <li>Xóa thư mục cấu hình `%appdata%\\IDM`</li>
+                  </ul>
+                </div>
+                <div class="reset-info-block">
+                  <span class="reset-block-label">Lưu ý</span>
+                  <p class="idm-warning">Sau khi reset, hãy mở lại IDM để áp dụng trạng thái trial mới.</p>
+                </div>
+                <div class="progress progress-indeterminate" id="idm-progress" style="display:none;">
+                  <div class="progress-bar"></div>
+                </div>
+              </div>
 
-          <div class="shutdown-controls-card">
-            <div class="idm-info-box">
-              <h3>Tính năng này sẽ:</h3>
-              <ul class="idm-info-list">
-                <li>✓ Tắt IDM nếu đang chạy</li>
-                <li>✓ Xóa registry keys (ConfigTime, MData)</li>
-                <li>✓ Reset giá trị Thread và Model</li>
-                <li>✓ Xóa folder cấu hình %appdata%\IDM</li>
-              </ul>
-              <p class="idm-warning">⚠️ Sau khi reset, khởi động lại IDM để áp dụng.</p>
-            </div>
-
-            <!-- Steps progress -->
-            <div class="idm-steps" id="idm-steps" style="display:none;">
+              <div class="idm-steps" id="idm-steps" style="display:none;">
+                <div class="reset-block-label">Tiến trình</div>
               <div class="idm-step" id="idm-step-1">
                 <div class="idm-step-icon">
                   <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
@@ -600,16 +636,134 @@
                 </div>
               </div>
             </div>
-
-            <div class="shutdown-actions">
-              <button class="btn btn-success" id="idm-reset-btn">
-                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-                </svg>
-                Reset IDM Trial
-              </button>
             </div>
+          </section>
+
+          <aside class="reset-extension-card">
+            <div class="reset-extension-icon">
+              <svg width="28" height="28" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v3H6a1 1 0 100 2h3v3a1 1 0 102 0v-3h3a1 1 0 100-2h-3V6z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+            <h3>Khu vực mở rộng</h3>
+            <p>Card này dành sẵn cho các công cụ reset khác trong tương lai như reset cache, reset network hoặc reset config.</p>
+            <span class="badge badge-outline">Sẵn sàng mở rộng</span>
+          </aside>
+        </div>
+      </div>
+
+      <div id="view-prompts" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Prompt</h1>
+            <p class="subtitle">Lưu, chỉnh sửa và copy nhanh các prompt dùng thường xuyên trong một nơi gọn gàng.</p>
           </div>
+          <div class="header-right">
+            <span class="badge badge-secondary" id="prompt-count">0 prompt</span>
+            <button class="btn btn-secondary" id="prompt-refresh-btn">Làm mới</button>
+          </div>
+        </header>
+
+        <div class="library-layout">
+          <section class="library-form-card">
+            <div class="library-card-head">
+              <div>
+                <h2 id="prompt-form-title">Tạo prompt mới</h2>
+                <p id="prompt-form-desc">Lưu prompt dùng nhiều lần để copy nhanh khi cần.</p>
+              </div>
+            </div>
+            <form id="prompt-form" class="library-form">
+              <label class="library-field">
+                <span class="library-label">Tên prompt</span>
+                <input id="prompt-name" class="library-input" type="text" maxlength="120" placeholder="Ví dụ: Prompt viết email khách hàng" required>
+              </label>
+              <label class="library-field">
+                <span class="library-label">Nội dung prompt</span>
+                <textarea id="prompt-content" class="library-textarea" placeholder="Nhập nội dung prompt..." required></textarea>
+              </label>
+              <div class="library-form-actions">
+                <button class="btn btn-success" type="submit"><span id="prompt-submit-label">Lưu prompt</span></button>
+                <button class="btn btn-secondary" type="button" id="prompt-cancel-btn" style="display:none">Hủy chỉnh sửa</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="library-list-card">
+            <div class="library-card-head">
+              <div>
+                <h2>Danh sách prompt</h2>
+                <p>Ưu tiên rõ ràng nội dung, copy nhanh và chỉnh sửa ít thao tác.</p>
+              </div>
+            </div>
+            <div class="library-list" id="prompt-list"></div>
+          </section>
+        </div>
+      </div>
+
+      <div id="view-links" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Link</h1>
+            <p class="subtitle">Lưu link để đọc sau, ưu tiên chưa đọc lên trên và chuyển trạng thái cực nhanh.</p>
+          </div>
+          <div class="header-right">
+            <span class="badge badge-warning" id="link-unread-count">0 chưa đọc</span>
+            <span class="badge badge-secondary" id="link-count">0 link</span>
+            <button class="btn btn-secondary" id="link-refresh-btn">Làm mới</button>
+          </div>
+        </header>
+
+        <div class="library-layout">
+          <section class="library-form-card">
+            <div class="library-card-head">
+              <div>
+                <h2 id="link-form-title">Lưu link mới</h2>
+                <p id="link-form-desc">Gom link cần đọc vào một chỗ, có trạng thái để xử lý nhanh.</p>
+              </div>
+            </div>
+            <form id="link-form" class="library-form">
+              <label class="library-field">
+                <span class="library-label">Tên link</span>
+                <input id="link-name" class="library-input" type="text" maxlength="120" placeholder="Ví dụ: Bài viết về Electron IPC" required>
+              </label>
+              <label class="library-field">
+                <span class="library-label">Link</span>
+                <input id="link-url" class="library-input" type="url" placeholder="https://..." required>
+              </label>
+              <label class="toggle-row library-toggle-row">
+                <span class="toggle-label">
+                  <strong>Đánh dấu đã đọc</strong>
+                  <small>Bật nếu link này đã xử lý xong</small>
+                </span>
+                <div class="switch">
+                  <input type="checkbox" id="link-read">
+                  <span class="switch-track"><span class="switch-thumb"></span></span>
+                </div>
+              </label>
+              <div class="library-form-actions">
+                <button class="btn btn-success" type="submit"><span id="link-submit-label">Lưu link</span></button>
+                <button class="btn btn-secondary" type="button" id="link-cancel-btn" style="display:none">Hủy chỉnh sửa</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="library-list-card">
+            <div class="library-card-head">
+              <div>
+                <h2>Danh sách link</h2>
+                <p>Giữ trạng thái đọc rõ ràng, mở nhanh và sắp xếp theo nhu cầu.</p>
+              </div>
+              <label class="library-sort">
+                <span class="library-label">Sắp xếp</span>
+                <select id="link-sort" class="shutdown-select">
+                  <option value="unread">Chưa đọc trước</option>
+                  <option value="latest">Mới cập nhật</option>
+                  <option value="name">Tên A-Z</option>
+                </select>
+              </label>
+            </div>
+            <div class="library-list" id="link-list"></div>
+          </section>
         </div>
       </div>
 

@@ -21,6 +21,56 @@ const SERVICE_CONFIGS = {
   }
 };
 
+function normalizeText(value) {
+  return String(value || '').trim();
+}
+
+function normalizePrompt(input = {}, now = Date.now()) {
+  const name = normalizeText(input.name);
+  const content = String(input.content || '').trim();
+  if (!name) throw new Error('Tên prompt không được để trống');
+  if (!content) throw new Error('Nội dung prompt không được để trống');
+
+  return {
+    id: input.id || `prompt_${now}_${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    content,
+    createdAt: input.createdAt || now,
+    updatedAt: now
+  };
+}
+
+function normalizeLink(input = {}, now = Date.now()) {
+  const name = normalizeText(input.name);
+  const url = normalizeText(input.url);
+  if (!name) throw new Error('Tên link không được để trống');
+  if (!url) throw new Error('Link không được để trống');
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch (error) {
+    throw new Error('Link không hợp lệ');
+  }
+
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('Chỉ hỗ trợ link http hoặc https');
+  }
+
+  return {
+    id: input.id || `link_${now}_${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    url: parsedUrl.toString(),
+    read: !!input.read,
+    createdAt: input.createdAt || now,
+    updatedAt: now
+  };
+}
+
+function persistSettings(settings) {
+  settings._save();
+}
+
 function register({ ipcMain, app, shell, settings, services, tray, getWindow }) {
   const send = (channel, data) => {
     const win = getWindow();
@@ -99,6 +149,78 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
 
   ipcMain.on('open-browser', (_, url) => shell.openExternal(url));
   ipcMain.on('open-folder', (_, folderPath) => exec(`explorer "${folderPath}"`, () => {}));
+
+  ipcMain.handle('library-get-all', () => ({
+    prompts: Array.isArray(settings.prompts) ? settings.prompts : [],
+    links: Array.isArray(settings.links) ? settings.links : []
+  }));
+
+  ipcMain.handle('prompt-save', (_, prompt) => {
+    const now = Date.now();
+    const current = Array.isArray(settings.prompts) ? [...settings.prompts] : [];
+    const existing = prompt && prompt.id ? current.find(item => item.id === prompt.id) : null;
+    const normalized = normalizePrompt({
+      ...existing,
+      ...prompt,
+      createdAt: existing?.createdAt || prompt?.createdAt
+    }, now);
+
+    const next = existing
+      ? current.map(item => (item.id === normalized.id ? normalized : item))
+      : [normalized, ...current];
+
+    settings.prompts = next;
+    persistSettings(settings);
+    return { ok: true, prompt: normalized, prompts: next };
+  });
+
+  ipcMain.handle('prompt-delete', (_, promptId) => {
+    const current = Array.isArray(settings.prompts) ? settings.prompts : [];
+    settings.prompts = current.filter(item => item.id !== promptId);
+    persistSettings(settings);
+    return { ok: true, prompts: settings.prompts };
+  });
+
+  ipcMain.handle('link-save', (_, link) => {
+    const now = Date.now();
+    const current = Array.isArray(settings.links) ? [...settings.links] : [];
+    const existing = link && link.id ? current.find(item => item.id === link.id) : null;
+    const normalized = normalizeLink({
+      ...existing,
+      ...link,
+      createdAt: existing?.createdAt || link?.createdAt
+    }, now);
+
+    const next = existing
+      ? current.map(item => (item.id === normalized.id ? normalized : item))
+      : [normalized, ...current];
+
+    settings.links = next;
+    persistSettings(settings);
+    return { ok: true, link: normalized, links: next };
+  });
+
+  ipcMain.handle('link-delete', (_, linkId) => {
+    const current = Array.isArray(settings.links) ? settings.links : [];
+    settings.links = current.filter(item => item.id !== linkId);
+    persistSettings(settings);
+    return { ok: true, links: settings.links };
+  });
+
+  ipcMain.handle('link-toggle-read', (_, { id, read }) => {
+    const now = Date.now();
+    const current = Array.isArray(settings.links) ? settings.links : [];
+    let updatedLink = null;
+
+    settings.links = current.map((item) => {
+      if (item.id !== id) return item;
+      updatedLink = { ...item, read: !!read, updatedAt: now };
+      return updatedLink;
+    });
+
+    persistSettings(settings);
+    return { ok: true, link: updatedLink, links: settings.links };
+  });
 
   Object.values(SERVICE_CONFIGS).forEach((cfg) => {
     ipcMain.on(`start-${cfg.key}`, () => {
