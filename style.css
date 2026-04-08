@@ -2037,9 +2037,8 @@ body {
 
 /* ─── Reset Workspace ───────────────────────────────────────────────────────── */
 .reset-layout {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
 }
 
@@ -2055,67 +2054,61 @@ body {
 .reset-card {
   padding: 16px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 16px;
-  align-items: center;
-  flex: 1;
-  min-width: 320px;
-  max-width: 480px;
+  align-items: flex-start;
+  min-height: 140px;
 }
 
 .reset-card.reset-card-compact {
-  padding: 10px 14px;
+  padding: 16px;
   gap: 12px;
-  min-width: 280px;
-  max-width: 380px;
+  min-width: 0;
+  max-width: none;
 }
 
 .reset-card-header {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+  flex-direction: column;
+  justify-content: flex-start;
   width: 100%;
-  gap: 16px;
-  align-items: center;
+  gap: 12px;
+  align-items: flex-start;
+  flex: 1;
 }
 
 .reset-card-intro {
   display: flex;
   gap: 12px;
-  align-items: center;
+  align-items: flex-start;
   min-width: 0;
-  flex: 1;
+  width: 100%;
 }
 
 .reset-card-intro h2 {
-  font-size: 14px;
-  margin-bottom: 2px;
+  font-size: 15px;
+  margin-bottom: 4px;
 }
 
 .reset-card-intro p {
   color: var(--text-2);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.4;
   margin: 0;
 }
 
-.reset-extension-card p,
-.library-card-head p {
-  color: var(--text-2);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
 .reset-card-compact .reset-card-intro p {
-  display: none; /* Hide description in compact horizontal mode */
+  display: block; /* Show description in grid mode */
 }
 
 .reset-card-status {
-  min-width: 140px;
+  min-width: 0;
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  justify-content: space-between;
   align-items: flex-end;
+  margin-top: auto;
 }
 
 .reset-card-actions {
@@ -2425,53 +2418,22 @@ body {
 }
 
 .library-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.library-empty {
-  border: 1px dashed var(--border);
-  border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-2), transparent);
-  padding: 40px 28px;
-  text-align: center;
-}
-
-.library-empty-icon {
-  width: 52px;
-  height: 52px;
-  margin: 0 auto 14px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 800;
-  background: var(--text);
-  color: var(--surface);
-}
-
-.library-empty h3 {
-  font-size: 18px;
-  margin-bottom: 8px;
-}
-
-.library-empty p {
-  color: var(--text-2);
-  max-width: 440px;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
 }
 
 .library-item {
   display: flex;
-  gap: 16px;
-  align-items: center;
-  padding: 12px 16px;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
   border-radius: var(--r-lg);
   border: 1px solid var(--border);
   background: var(--surface);
   transition: border-color .15s, box-shadow .15s, transform .15s;
+  min-height: 160px;
 }
 
 .library-item:hover {
@@ -2486,9 +2448,9 @@ body {
 }
 
 .link-thumbnail {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   display: flex;
@@ -2496,6 +2458,7 @@ body {
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .link-thumbnail img {
@@ -2509,20 +2472,22 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  width: 100%;
 }
 
 .library-item-head {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 2px;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  margin-bottom: 0;
 }
 
 .library-item-head h3 {
-  font-size: 15px;
-  margin-bottom: 6px;
+  font-size: 14px;
+  margin-bottom: 0;
+  line-height: 1.3;
 }
 
 .link-item.is-pinned {
@@ -2630,6 +2595,11 @@ body {
   color: var(--blue);
   text-decoration: none;
   word-break: break-all;
+  font-size: 11px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .library-link:hover {
@@ -2638,10 +2608,12 @@ body {
 
 .library-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  align-self: flex-start;
-  justify-content: flex-end;
+  align-self: stretch;
+  justify-content: flex-start;
+  margin-top: auto;
+  width: 100%;
 }
 
 @media (max-width: 1080px) {
