@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const path = require('path');
 const ui = require('../../ui');
 
 // ─── Scheduler state ──────────────────────────────────────────────────────────
@@ -84,6 +85,12 @@ function init() {
 
   if (!resetBtn || !statusEl || !checkBtn || !progressEl || !stepsEl) return;
 
+  // Set logo thật — dùng file:// protocol của Electron
+  const logoImg = ui.$('idm-logo-img');
+  if (logoImg) {
+    logoImg.src = 'file://' + path.join(__dirname, '../../assets/idm-logo.jpg').replace(/\\/g, '/');
+  }
+
   let isCheckingIDM = false;
   let isResetting = false;
 
@@ -132,19 +139,9 @@ function init() {
     }
   });
 
-  saveBtn.addEventListener('click', () => {
-    const days = Math.max(1, Math.min(30, parseInt(daysInput.value) || 5));
-    daysInput.value = days;
-    const s = loadSchedule();
-    s.days = days;
-    saveSchedule(s);
-    updateSchedulerUI(s);
-    if (s.enabled) startScheduler(s, doReset);
-    ui.showToast(`Đã lưu: reset mỗi ${days} ngày`, 'success');
-  });
   startScheduler(schedule, doReset);
 
-  // Khởi động scheduler nếu đã bật
+  // ─── Step helpers ─────────────────────────────────────────────────────────
   function showStep(step, status = 'running') {
     const stepEl = ui.$(`idm-step-${step}`);
     if (!stepEl) return;

@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const path = require('path');
 const ui = require('../../ui');
 
 function init() {
@@ -10,6 +11,12 @@ function init() {
   const idText     = ui.$('anydesk-id-text');
 
   if (!checkBtn) return;
+
+  // Set logo thật
+  const logoImg = ui.$('anydesk-logo-img');
+  if (logoImg) {
+    logoImg.src = 'file://' + path.join(__dirname, '../../assets/anydesk-logo.svg').replace(/\\/g, '/');
+  }
 
   let isBusy = false;
 
