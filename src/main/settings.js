@@ -11,6 +11,7 @@ const DEFAULTS = {
   autoStartOpenclaw: false,
   minimizeToTray:    true,
   startMinimized:    false,
+  sync_url:          '',
   prompts:           [],
   links:             []
 };

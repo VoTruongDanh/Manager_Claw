@@ -25,6 +25,28 @@ function normalizeText(value) {
   return String(value || '').trim();
 }
 
+function normalizeBoolean(value) {
+  return ['1', 'true', 'yes', 'y'].includes(normalizeText(value).toLowerCase());
+}
+
+function normalizeSyncUrl(value) {
+  const url = normalizeText(value);
+  if (!url) throw new Error('Sync link khong duoc de trong');
+
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+  } catch (_) {
+    throw new Error('Sync link khong hop le');
+  }
+
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('Chi ho tro sync link http hoac https');
+  }
+
+  return parsedUrl.toString();
+}
+
 function sanitizePreviewText(value, fallback = '') {
   return String(value || fallback || '')
     .replace(/\s+/g, ' ')
@@ -143,6 +165,216 @@ async function fetchLinkPreview(url, name) {
   } catch (_) {
     return fallback;
   }
+}
+
+function parseCsvRows(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  const pushField = () => {
+    row.push(field);
+    field = '';
+  };
+
+  const pushRow = () => {
+    pushField();
+    rows.push(row);
+    row = [];
+  };
+
+  const input = String(text || '');
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (input[index + 1] === '"') {
+          field += '"';
+          index += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+      continue;
+    }
+
+    if (char === ',') {
+      pushField();
+      continue;
+    }
+
+    if (char === '\n') {
+      pushRow();
+      continue;
+    }
+
+    if (char === '\r') {
+      continue;
+    }
+
+    field += char;
+  }
+
+  if (field.length || row.length) {
+    pushRow();
+  }
+
+  return rows;
+}
+
+function parseLinkCsv(text) {
+  const rows = parseCsvRows(text);
+  if (!rows.length) return [];
+
+  const headers = rows[0].map((value) =>
+    normalizeText(String(value || '').replace(/^\uFEFF/, '')).toLowerCase()
+  );
+
+  const columnIndex = {
+    name: headers.indexOf('name'),
+    url: headers.indexOf('url'),
+    pinned: headers.indexOf('pinned'),
+    read: headers.indexOf('read')
+  };
+
+  if (columnIndex.name === -1 || columnIndex.url === -1) {
+    throw new Error('CSV phai co cot name va url');
+  }
+
+  return rows.slice(1).map((cols, rowIndex) => ({
+    rowNumber: rowIndex + 2,
+    name: cols[columnIndex.name] || '',
+    url: cols[columnIndex.url] || '',
+    pinned: columnIndex.pinned === -1 ? '' : cols[columnIndex.pinned] || '',
+    read: columnIndex.read === -1 ? '' : cols[columnIndex.read] || ''
+  })).filter((item) => {
+    const hasName = normalizeText(item.name);
+    const hasUrl = normalizeText(item.url);
+
+    if (!hasName && !hasUrl) return false;
+    if (!hasName || !hasUrl) {
+      throw new Error(`Dong ${item.rowNumber} phai co day du name va url`);
+    }
+
+    return true;
+  });
+}
+
+function getUrlKey(value) {
+  const raw = normalizeText(typeof value === 'string' ? value : value?.url);
+  if (!raw) return '';
+
+  try {
+    return new URL(raw).toString();
+  } catch (_) {
+    return raw;
+  }
+}
+
+function mergeLinksByUrl(currentLinks = [], importedLinks = []) {
+  const merged = [];
+  const seen = new Set();
+  let duplicateCount = 0;
+
+  currentLinks.forEach((item) => {
+    const key = getUrlKey(item);
+    if (key && seen.has(key)) {
+      duplicateCount += 1;
+      return;
+    }
+
+    if (key) seen.add(key);
+    merged.push(item);
+  });
+
+  const newItems = [];
+  importedLinks.forEach((item) => {
+    const key = getUrlKey(item);
+    if (key && seen.has(key)) {
+      duplicateCount += 1;
+      return;
+    }
+
+    if (key) seen.add(key);
+    newItems.push(item);
+  });
+
+  return {
+    links: [...newItems, ...merged],
+    addedCount: newItems.length,
+    duplicateCount
+  };
+}
+
+async function syncLinksFromCsv(settings) {
+  const syncUrl = normalizeText(settings.sync_url);
+  const current = Array.isArray(settings.links) ? [...settings.links] : [];
+
+  if (!syncUrl) {
+    return {
+      ok: true,
+      skipped: true,
+      sync_url: '',
+      links: current,
+      importedCount: 0,
+      addedCount: 0,
+      duplicateCount: 0
+    };
+  }
+
+  const response = await fetchWithTimeout(syncUrl, {
+    headers: { accept: 'text/csv,text/plain;q=0.9,*/*;q=0.1' }
+  }, 8000);
+
+  if (!response.ok) {
+    throw new Error(`Khong the tai CSV (${response.status})`);
+  }
+
+  const csvText = await response.text();
+  const rows = parseLinkCsv(csvText);
+  const now = Date.now();
+  const importedLinks = rows.map((row, index) => {
+    try {
+      const parsedUrl = new URL(normalizeText(row.url));
+      return normalizeLink({
+        name: row.name,
+        url: parsedUrl.toString(),
+        pinned: normalizeBoolean(row.pinned),
+        read: normalizeBoolean(row.read),
+        preview: {
+          title: row.name,
+          favicon: null,
+          hostname: parsedUrl.hostname,
+          fetchedAt: now
+        }
+      }, now + index);
+    } catch (error) {
+      throw new Error(`Dong ${row.rowNumber}: ${error.message}`);
+    }
+  });
+
+  const merged = mergeLinksByUrl(current, importedLinks);
+  settings.links = merged.links;
+  persistSettings(settings);
+
+  return {
+    ok: true,
+    skipped: false,
+    sync_url: syncUrl,
+    links: merged.links,
+    importedCount: importedLinks.length,
+    addedCount: merged.addedCount,
+    duplicateCount: merged.duplicateCount
+  };
 }
 
 function normalizePrompt(input = {}, now = Date.now()) {
@@ -288,8 +520,19 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
 
   ipcMain.handle('library-get-all', () => ({
     prompts: Array.isArray(settings.prompts) ? settings.prompts : [],
-    links: Array.isArray(settings.links) ? settings.links : []
+    links: Array.isArray(settings.links) ? settings.links : [],
+    sync_url: normalizeText(settings.sync_url)
   }));
+
+  ipcMain.handle('link-sync-save', (_, syncUrl) => {
+    settings.sync_url = normalizeSyncUrl(syncUrl);
+    persistSettings(settings);
+    return { ok: true, sync_url: settings.sync_url };
+  });
+
+  ipcMain.handle('link-sync-now', async () => {
+    return await syncLinksFromCsv(settings);
+  });
 
   ipcMain.handle('prompt-save', (_, prompt) => {
     const now = Date.now();

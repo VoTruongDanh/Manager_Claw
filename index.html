@@ -527,107 +527,93 @@
       <div id="view-idm-reset" style="display:none">
         <header class="header">
           <div>
-            <h1>Reset</h1>
-            <p class="subtitle">Reset nhanh các công cụ.</p>
+            <h1>Reset IDM</h1>
+            <p class="subtitle">Kiểm tra, reset trial và lên lịch tự động.</p>
           </div>
         </header>
 
-        <div class="reset-layout">
-          <section class="reset-card reset-card-compact" id="idm-reset-card">
-            <div class="reset-card-header">
-              <div class="reset-card-intro">
-                <div class="idm-icon-wrapper">
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="reset-tool-chip">IDM Trial</div>
-                  <h2>Reset IDM</h2>
-                  <p>Kiểm tra, reset và theo dõi tiến trình.</p>
-                </div>
+        <div class="idm-wrap">
+          <div class="idm-card">
+            <!-- Header -->
+            <div class="idm-card-header">
+              <div class="idm-card-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
               </div>
-              <div class="reset-card-status">
-                <div class="idm-status" id="idm-status">Chưa kiểm tra</div>
-                <div class="reset-card-actions">
-                  <button class="btn btn-secondary btn-sm" id="idm-check-btn">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-                    </svg>
-                    Kiểm tra
-                  </button>
-                  <button class="btn btn-success btn-sm" id="idm-reset-btn">
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
-                    </svg>
-                    Reset
-                  </button>
-                </div>
+              <div class="idm-card-info">
+                <div class="idm-card-title">Internet Download Manager</div>
+                <div class="idm-card-sub">Reset trial · Xóa registry · Xóa cấu hình</div>
               </div>
+              <div class="idm-status-badge" id="idm-status">Chưa kiểm tra</div>
             </div>
 
-            <div class="reset-summary-row">
-              <span class="reset-mini-pill">Kill process</span>
-              <span class="reset-mini-pill">Registry trial</span>
-              <span class="reset-mini-pill">%appdata%\\IDM</span>
-              <span class="reset-mini-note">Mở lại IDM sau khi reset.</span>
-            </div>
-
+            <!-- Progress bar -->
             <div class="progress progress-indeterminate" id="idm-progress" style="display:none;">
               <div class="progress-bar"></div>
             </div>
 
-            <div class="idm-steps" id="idm-steps" style="display:none;">
-              <div class="reset-block-label">Tiến trình</div>
-              <div class="idm-step" id="idm-step-1">
-                <div class="idm-step-icon">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm2 6a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
-                  </svg>
+            <!-- Steps -->
+            <div class="idm-steps-panel" id="idm-steps" style="display:none;">
+              <div class="idm-steps-label">Tiến trình reset</div>
+              <div class="idm-steps-list">
+                <div class="idm-step" id="idm-step-1">
+                  <div class="idm-step-num">1</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Tắt IDM</div><div class="idm-step-desc">IDMan.exe, IEMonitor.exe</div></div>
+                  <div class="idm-step-state"></div>
                 </div>
-                <div class="idm-step-content">
-                  <div class="idm-step-title">Tắt IDM</div>
-                  <div class="idm-step-desc">IDMan.exe, IEMonitor.exe</div>
+                <div class="idm-step" id="idm-step-2">
+                  <div class="idm-step-num">2</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Xóa registry</div><div class="idm-step-desc">ConfigTime, MData</div></div>
+                  <div class="idm-step-state"></div>
                 </div>
-              </div>
-
-              <div class="idm-step" id="idm-step-2">
-                <div class="idm-step-icon">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/>
-                  </svg>
+                <div class="idm-step" id="idm-step-3">
+                  <div class="idm-step-num">3</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Xóa cấu hình</div><div class="idm-step-desc">%appdata%\IDM</div></div>
+                  <div class="idm-step-state"></div>
                 </div>
-                <div class="idm-step-content">
-                  <div class="idm-step-title">Xóa registry</div>
-                  <div class="idm-step-desc">ConfigTime, MData</div>
-                </div>
-              </div>
-
-              <div class="idm-step" id="idm-step-3">
-                <div class="idm-step-icon">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clip-rule="evenodd"/><path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H2h2a2 2 0 002-2v-2z"/>
-                  </svg>
-                </div>
-                <div class="idm-step-content">
-                  <div class="idm-step-title">Xóa cấu hình</div>
-                  <div class="idm-step-desc">%appdata%\IDM</div>
-                </div>
-              </div>
-
-              <div class="idm-step" id="idm-step-4">
-                <div class="idm-step-icon">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <div class="idm-step-content">
-                  <div class="idm-step-title">Hoàn tất</div>
-                  <div class="idm-step-desc">Mở lại IDM</div>
+                <div class="idm-step" id="idm-step-4">
+                  <div class="idm-step-num">4</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Hoàn tất</div><div class="idm-step-desc">Mở lại IDM để áp dụng</div></div>
+                  <div class="idm-step-state"></div>
                 </div>
               </div>
             </div>
-          </section>
+
+            <!-- Actions + Auto-reset inline -->
+            <div class="idm-card-actions">
+              <button class="btn btn-secondary" id="idm-check-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                Kiểm tra
+              </button>
+              <button class="btn btn-success" id="idm-reset-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+                Reset ngay
+              </button>
+              <div class="idm-action-sep"></div>
+              <div class="idm-auto-row">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="color:var(--text-3);flex-shrink:0"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                <span class="idm-auto-text">Tự động mỗi</span>
+                <div class="idm-days-input-wrap">
+                  <button class="idm-days-btn" id="idm-days-dec" type="button">−</button>
+                  <input type="number" id="idm-auto-days" class="idm-days-input" min="1" max="30" value="5">
+                  <button class="idm-days-btn" id="idm-days-inc" type="button">+</button>
+                </div>
+                <span class="idm-auto-text">ngày</span>
+                <label class="switch">
+                  <input type="checkbox" id="idm-auto-toggle">
+                  <span class="switch-track"><span class="switch-thumb"></span></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Schedule info row -->
+            <div class="idm-schedule-info" id="idm-schedule-info">
+              <span id="idm-last-reset-text">Chưa reset lần nào</span>
+              <span class="idm-schedule-sep">·</span>
+              <span id="idm-next-reset-text">Bật tự động để xem lịch</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -688,6 +674,7 @@
           <div class="header-right">
             <span class="badge badge-warning" id="link-unread-count">0 chưa đọc</span>
             <span class="badge badge-secondary" id="link-count">0 link</span>
+            <button class="btn btn-secondary" id="link-sync-settings-btn">Sync Settings</button>
             <button class="btn btn-secondary" id="link-refresh-btn">Làm mới</button>
           </div>
         </header>
@@ -743,6 +730,31 @@
             </div>
             <div class="library-list" id="link-list"></div>
           </section>
+        </div>
+
+        <div class="library-modal-overlay" id="link-sync-modal" role="dialog" aria-modal="true" aria-labelledby="link-sync-title" style="display:none">
+          <div class="library-modal">
+            <div class="library-modal-head">
+              <div>
+                <h2 id="link-sync-title">Google Sheets CSV Sync</h2>
+                <p>Nhập link CSV công khai của Google Sheet để đồng bộ link.</p>
+              </div>
+              <button class="btn-icon btn-secondary" type="button" id="link-sync-close-btn" aria-label="Đóng">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+            <form id="link-sync-form" class="library-form">
+              <label class="library-field">
+                <span class="library-label">Google Sheet CSV URL</span>
+                <input id="link-sync-url" class="library-input" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../gviz/tq?tqx=out:csv" required>
+              </label>
+              <p class="library-modal-note">CSV cần có các cột: <strong>name</strong>, <strong>url</strong>, <strong>pinned</strong>, <strong>read</strong>.</p>
+              <div class="library-form-actions library-modal-actions">
+                <button class="btn btn-secondary" type="button" id="link-sync-cancel-btn">Hủy</button>
+                <button class="btn btn-success" type="submit">Save &amp; Sync Now</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 

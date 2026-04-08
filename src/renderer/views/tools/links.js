@@ -4,6 +4,7 @@ const ui = require('../../ui');
 let links = [];
 let editingId = null;
 let currentSort = 'unread';
+let syncUrl = '';
 
 function init() {
   const form = ui.$('link-form');
@@ -11,23 +12,80 @@ function init() {
 
   form.addEventListener('submit', handleSubmit);
   ui.$('link-cancel-btn').addEventListener('click', resetForm);
-  ui.$('link-refresh-btn').addEventListener('click', load);
+  ui.$('link-refresh-btn').addEventListener('click', handleRefresh);
   ui.$('link-sort').addEventListener('change', (event) => {
     currentSort = event.target.value;
     render();
   });
   ui.$('link-list').addEventListener('click', handleListClick);
 
+  ui.$('link-sync-settings-btn').addEventListener('click', openSyncModal);
+  ui.$('link-sync-close-btn').addEventListener('click', closeSyncModal);
+  ui.$('link-sync-cancel-btn').addEventListener('click', closeSyncModal);
+  ui.$('link-sync-form').addEventListener('submit', handleSyncSubmit);
+  ui.$('link-sync-modal').addEventListener('click', (event) => {
+    if (event.target === ui.$('link-sync-modal')) closeSyncModal();
+  });
+  document.addEventListener('keydown', handleKeydown);
+
   load();
 }
 
-async function load() {
+async function load(options = {}) {
+  const { sync = false, silent = false } = options;
+
   try {
-    const data = await ipcRenderer.invoke('library-get-all');
+    const data = sync
+      ? await ipcRenderer.invoke('link-sync-now')
+      : await ipcRenderer.invoke('library-get-all');
+
     links = Array.isArray(data.links) ? data.links : [];
+    syncUrl = typeof data.sync_url === 'string' ? data.sync_url : '';
+    syncInputWithState();
     render();
+
+    if (sync && !silent) {
+      ui.showToast(formatSyncMessage(data), data.skipped ? 'info' : 'success');
+    }
+
+    return data;
   } catch (error) {
-    ui.showToast(`Không tải được Link: ${error.message}`, 'error');
+    ui.showToast(
+      sync ? `Không sync được Link: ${error.message}` : `Không tải được Link: ${error.message}`,
+      'error'
+    );
+    return null;
+  }
+}
+
+async function handleRefresh() {
+  const refreshBtn = ui.$('link-refresh-btn');
+  setButtonBusy(refreshBtn, true);
+  await load({ sync: true });
+  setButtonBusy(refreshBtn, false);
+}
+
+async function handleSyncSubmit(event) {
+  event.preventDefault();
+
+  const form = ui.$('link-sync-form');
+  const submitBtn = form.querySelector('button[type="submit"]');
+
+  try {
+    setButtonBusy(submitBtn, true);
+    const result = await ipcRenderer.invoke('link-sync-save', ui.$('link-sync-url').value.trim());
+    syncUrl = result.sync_url || '';
+    syncInputWithState();
+
+    const syncResult = await load({ sync: true, silent: true });
+    if (!syncResult) return;
+
+    closeSyncModal();
+    ui.showToast(formatSyncMessage(syncResult), syncResult.skipped ? 'info' : 'success');
+  } catch (error) {
+    ui.showToast(error.message, 'error');
+  } finally {
+    setButtonBusy(submitBtn, false);
   }
 }
 
@@ -39,8 +97,7 @@ async function handleSubmit(event) {
 
   try {
     const wasEditing = !!editingId;
-    submitBtn.disabled = true;
-    submitBtn.classList.add('loading');
+    setButtonBusy(submitBtn, true);
 
     const result = await ipcRenderer.invoke('link-save', {
       id: editingId,
@@ -56,8 +113,7 @@ async function handleSubmit(event) {
   } catch (error) {
     ui.showToast(error.message, 'error');
   } finally {
-    submitBtn.disabled = false;
-    submitBtn.classList.remove('loading');
+    setButtonBusy(submitBtn, false);
   }
 }
 
@@ -69,7 +125,7 @@ async function handleListClick(event) {
   const card = actionEl.closest('.library-item');
   if (!card) return;
 
-  const link = links.find(item => item.id === card.dataset.id);
+  const link = links.find((item) => item.id === card.dataset.id);
   if (!link) return;
 
   const action = actionEl.dataset.action;
@@ -136,6 +192,29 @@ async function handleListClick(event) {
   }
 }
 
+function openSyncModal() {
+  syncInputWithState();
+  ui.$('link-sync-modal').style.display = 'flex';
+  ui.$('link-sync-url').focus();
+  ui.$('link-sync-url').select();
+}
+
+function closeSyncModal() {
+  ui.$('link-sync-modal').style.display = 'none';
+}
+
+function handleKeydown(event) {
+  if (event.key === 'Escape' && ui.$('link-sync-modal').style.display !== 'none') {
+    closeSyncModal();
+  }
+}
+
+function syncInputWithState() {
+  const input = ui.$('link-sync-url');
+  if (!input) return;
+  input.value = syncUrl || '';
+}
+
 function resetForm() {
   editingId = null;
   ui.$('link-form').reset();
@@ -147,16 +226,17 @@ function resetForm() {
 
 function render() {
   const list = ui.$('link-list');
-  const unreadCount = links.filter(item => !item.read).length;
+  const unreadCount = links.filter((item) => !item.read).length;
   ui.$('link-count').textContent = `${links.length} link`;
   ui.$('link-unread-count').textContent = `${unreadCount} chưa đọc`;
+  ui.$('link-sync-settings-btn').title = syncUrl || 'Chưa cấu hình Google Sheets CSV';
 
   if (!links.length) {
     list.innerHTML = `
       <div class="library-empty">
         <div class="library-empty-icon">L</div>
         <h3>Chưa có link nào</h3>
-        <p>Lưu link cần đọc, ghim link quan trọng lên trên và xem nhanh title/favicon ngay trong danh sách.</p>
+        <p>Lưu link cần đọc, ghim link quan trọng lên trên và sync thêm bằng Google Sheets CSV khi cần.</p>
       </div>
     `;
     return;
@@ -203,6 +283,25 @@ function render() {
   `).join('');
 }
 
+function formatSyncMessage(result = {}) {
+  if (result.skipped) return 'Chưa cấu hình Google Sheets CSV để sync';
+
+  const fragments = [`Đã đọc ${result.importedCount || 0} dòng CSV`];
+  if (typeof result.addedCount === 'number') {
+    fragments.push(`thêm ${result.addedCount} link mới`);
+  }
+  if (result.duplicateCount) {
+    fragments.push(`bỏ qua ${result.duplicateCount} link trùng`);
+  }
+  return fragments.join(', ');
+}
+
+function setButtonBusy(button, busy) {
+  if (!button) return;
+  button.disabled = busy;
+  button.classList.toggle('loading', busy);
+}
+
 function renderThumbnail(link) {
   const icon = link?.preview?.favicon;
   if (icon) {
@@ -234,22 +333,8 @@ function sortLinks(items, sortKey) {
   });
 }
 
-function getPreviewTitle(link) {
-  return link?.preview?.title || link?.name || link?.preview?.hostname || 'Không có preview';
-}
-
 function getPreviewHost(link) {
   return link?.preview?.hostname || safeHost(link?.url);
-}
-
-function renderPreviewIcon(link) {
-  const icon = link?.preview?.favicon;
-  if (icon) {
-    return `<img class="link-preview-icon" src="${escapeAttr(icon)}" alt="" loading="lazy">`;
-  }
-
-  const fallback = getPreviewHost(link).slice(0, 1).toUpperCase() || 'L';
-  return `<span class="link-preview-icon is-fallback">${ui.escapeHtml(fallback)}</span>`;
 }
 
 function safeHost(url) {
@@ -270,8 +355,8 @@ function escapeAttr(value) {
 
 function formatDate(value) {
   if (!value) return '--';
-  const d = new Date(value);
-  return d.toLocaleString('vi-VN', {
+  const date = new Date(value);
+  return date.toLocaleString('vi-VN', {
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
