@@ -44,6 +44,16 @@ function normalizeSyncUrl(value) {
     throw new Error('Chi ho tro sync link http hoac https');
   }
 
+  if (parsedUrl.hostname === 'docs.google.com') {
+    const match = parsedUrl.pathname.match(/^\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (!match) {
+      throw new Error('Link Google Sheet khong hop le');
+    }
+
+    const gid = parsedUrl.searchParams.get('gid') || '0';
+    return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv&gid=${gid}`;
+  }
+
   return parsedUrl.toString();
 }
 
@@ -247,7 +257,7 @@ function parseLinkCsv(text) {
   };
 
   if (columnIndex.name === -1 || columnIndex.url === -1) {
-    throw new Error('CSV phai co cot name va url');
+    throw new Error('Sheet phai co cot name va url o dong tieu de');
   }
 
   return rows.slice(1).map((cols, rowIndex) => ({
@@ -262,7 +272,7 @@ function parseLinkCsv(text) {
 
     if (!hasName && !hasUrl) return false;
     if (!hasName || !hasUrl) {
-      throw new Error(`Dong ${item.rowNumber} phai co day du name va url`);
+      throw new Error(`Dong ${item.rowNumber} phai co day du cot name va url`);
     }
 
     return true;

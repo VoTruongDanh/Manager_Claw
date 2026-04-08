@@ -284,7 +284,7 @@ function render() {
 }
 
 function formatSyncMessage(result = {}) {
-  if (result.skipped) return 'Chưa cấu hình Google Sheets CSV để sync';
+  if (result.skipped) return 'Chưa cấu hình link Google Sheet hoặc CSV để sync';
 
   const fragments = [`Đã đọc ${result.importedCount || 0} dòng CSV`];
   if (typeof result.addedCount === 'number') {
