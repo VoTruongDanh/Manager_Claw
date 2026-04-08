@@ -2037,7 +2037,10 @@ body {
 
 /* ─── Reset Workspace ───────────────────────────────────────────────────────── */
 .reset-layout {
-  display: block;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .reset-card,
@@ -2050,37 +2053,52 @@ body {
 }
 
 .reset-card {
-  padding: 22px;
+  padding: 16px;
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  flex-direction: row;
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+  min-width: 320px;
+  max-width: 480px;
 }
 
 .reset-card.reset-card-compact {
-  padding: 16px;
+  padding: 10px 14px;
   gap: 12px;
+  min-width: 280px;
+  max-width: 380px;
 }
 
 .reset-card-header {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
-  gap: 18px;
-  align-items: flex-start;
+  width: 100%;
+  gap: 16px;
+  align-items: center;
 }
 
 .reset-card-intro {
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
+  gap: 12px;
+  align-items: center;
   min-width: 0;
+  flex: 1;
 }
 
 .reset-card-intro h2 {
-  font-size: 16px;
-  margin-bottom: 4px;
+  font-size: 14px;
+  margin-bottom: 2px;
 }
 
-.reset-card-intro p,
+.reset-card-intro p {
+  color: var(--text-2);
+  font-size: 11.5px;
+  line-height: 1.4;
+  margin: 0;
+}
+
 .reset-extension-card p,
 .library-card-head p {
   color: var(--text-2);
@@ -2089,36 +2107,26 @@ body {
 }
 
 .reset-card-compact .reset-card-intro p {
-  font-size: 12px;
-  line-height: 1.45;
+  display: none; /* Hide description in compact horizontal mode */
 }
 
 .reset-card-status {
-  min-width: 188px;
+  min-width: 140px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  align-items: stretch;
+  gap: 6px;
+  align-items: flex-end;
 }
 
 .reset-card-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
 .reset-tool-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: var(--blue-subtle);
-  color: var(--blue);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .3px;
-  margin-bottom: 8px;
+  display: none; /* Hide chip for horizontal compact layout */
 }
 
 .reset-card-grid {
@@ -2175,13 +2183,16 @@ body {
 }
 
 .idm-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: linear-gradient(135deg, var(--text), #3f3f46);
   color: #fff;
   margin-bottom: 0;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .idm-status {
@@ -2189,8 +2200,9 @@ body {
   background: var(--surface-2);
   color: var(--text-2);
   border: 1px solid var(--border);
-  padding: 6px 10px;
-  font-size: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 6px;
 }
 
 .idm-status.checking {
@@ -2249,8 +2261,7 @@ body {
 }
 
 .idm-steps {
-  padding: 12px;
-  gap: 8px;
+  display: none !important; /* Hide step details in horizontal compact layout */
 }
 
 .idm-step {
@@ -2272,10 +2283,7 @@ body {
 }
 
 .reset-summary-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  display: none; /* Hide summary pills in horizontal compact layout */
 }
 
 .reset-mini-pill,
@@ -2458,8 +2466,8 @@ body {
 .library-item {
   display: flex;
   gap: 16px;
-  justify-content: space-between;
-  padding: 16px 18px;
+  align-items: center;
+  padding: 12px 16px;
   border-radius: var(--r-lg);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -2477,17 +2485,39 @@ body {
   background: linear-gradient(180deg, var(--amber-subtle), var(--surface));
 }
 
+.link-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.link-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .library-item-main {
   min-width: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .library-item-head {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 2px;
 }
 
 .library-item-head h3 {

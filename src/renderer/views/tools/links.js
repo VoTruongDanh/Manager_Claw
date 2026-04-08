@@ -164,39 +164,49 @@ function render() {
 
   list.innerHTML = sortLinks(links, currentSort).map((link) => `
     <article class="library-item link-item ${link.read ? 'is-read' : 'is-unread'} ${link.pinned ? 'is-pinned' : ''}" data-id="${link.id}">
+      <div class="link-thumbnail">
+        ${renderThumbnail(link)}
+      </div>
       <div class="library-item-main">
         <div class="library-item-head">
-          <div>
-            <div class="link-title-row">
-              <h3>${ui.escapeHtml(link.name)}</h3>
-              ${link.pinned ? '<span class="link-pin-indicator">Pinned</span>' : ''}
-            </div>
-            <div class="link-preview-row">
-              ${renderPreviewIcon(link)}
-              <span class="link-preview-title" title="${escapeAttr(getPreviewTitle(link))}">${ui.escapeHtml(getPreviewTitle(link))}</span>
-            </div>
-            <a href="#" class="library-link" data-action="open">${ui.escapeHtml(link.url)}</a>
+          <div class="link-title-row">
+            <h3>${ui.escapeHtml(link.name)}</h3>
+            ${link.pinned ? '<span class="link-pin-indicator">Pinned</span>' : ''}
           </div>
           <span class="badge ${link.read ? 'badge-secondary' : 'badge-warning'}">${link.read ? 'Đã đọc' : 'Chưa đọc'}</span>
         </div>
+        <a href="#" class="library-link" data-action="open">${ui.escapeHtml(link.url)}</a>
         <div class="library-meta-row">
           <span class="library-meta">${ui.escapeHtml(getPreviewHost(link))}</span>
           <span class="library-meta">Cập nhật ${formatDate(link.updatedAt)}</span>
-          <span class="library-meta">Tạo ${formatDate(link.createdAt)}</span>
         </div>
       </div>
       <div class="library-actions">
-        <button class="btn-icon library-pin-btn ${link.pinned ? 'is-active' : ''}" data-action="toggle-pin" aria-label="${link.pinned ? 'Bỏ ghim' : 'Ghim lên đầu'}" title="${link.pinned ? 'Bỏ ghim' : 'Ghim lên đầu'}">
-          <svg width="15" height="15" viewBox="0 0 20 20" fill="${link.pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.7">
-            <path d="M10 2.5l2.163 4.383 4.837.703-3.5 3.412.826 4.817L10 13.54l-4.326 2.275.826-4.817-3.5-3.412 4.837-.703L10 2.5z"/>
+        <button class="btn-icon library-pin-btn ${link.pinned ? 'is-active' : ''}" data-action="toggle-pin" title="${link.pinned ? 'Bỏ ghim' : 'Ghim'}">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="${link.pinned ? 'currentColor' : 'none'}" stroke="currentColor">
+            <path d="M10 2l2.5 5 5.5.5-4 3.5 1 5.5-5-3-5 3 1-5.5-4-3.5 5.5-.5L10 2z"/>
           </svg>
         </button>
-        <button class="btn ${link.read ? 'btn-secondary' : 'btn-success'} btn-sm" data-action="toggle-read">${link.read ? 'Đánh dấu chưa đọc' : 'Đánh dấu đã đọc'}</button>
-        <button class="btn btn-secondary btn-sm" data-action="edit">Sửa</button>
-        <button class="btn btn-danger btn-sm" data-action="delete">Xóa</button>
+        <button class="btn btn-secondary btn-sm" data-action="toggle-read">${link.read ? 'Chưa đọc' : 'Xong'}</button>
+        <button class="btn-icon btn-secondary btn-sm" data-action="edit">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>
+        </button>
+        <button class="btn-icon btn-danger btn-sm" data-action="delete">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        </button>
       </div>
     </article>
   `).join('');
+}
+
+function renderThumbnail(link) {
+  const icon = link?.preview?.favicon;
+  if (icon) {
+    return `<img src="${escapeAttr(icon)}" alt="" loading="lazy">`;
+  }
+  const host = getPreviewHost(link);
+  const letter = host ? host.replace('www.', '').charAt(0).toUpperCase() : 'L';
+  return `<span style="font-weight:700;color:var(--text-3);font-size:18px">${letter}</span>`;
 }
 
 function sortLinks(items, sortKey) {
