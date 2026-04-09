@@ -2532,26 +2532,45 @@ body.app-ready .app-loading-screen {
 
 .library-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1400px) {
+  .library-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .library-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .library-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .library-item {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 14px;
+  gap: 12px;
+  padding: 16px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
-  transition: border-color .15s, box-shadow .15s, transform .15s;
+  transition: all 0.2s var(--ease);
+  min-height: 200px;
+  cursor: pointer;
 }
 
 .library-item:hover {
-  border-color: rgba(37,99,235,.25);
-  box-shadow: 0 10px 24px rgba(0,0,0,.08);
-  transform: translateY(-1px);
+  border-color: rgba(37,99,235,.35);
+  box-shadow: 0 12px 32px rgba(0,0,0,.12);
+  transform: translateY(-2px);
 }
 
 .library-item.is-unread {
