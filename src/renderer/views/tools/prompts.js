@@ -138,7 +138,13 @@ function render() {
   if (!total) {
     list.innerHTML = `
       <div class="library-empty">
-        <div class="library-empty-icon">P</div>
+        <div class="library-empty-icon">
+          <svg width="32" height="32" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h7a1 1 0 000-2H4V5h12v3a1 1 0 102 0V5a2 2 0 00-2-2H4z"/>
+            <path d="M15 10a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z"/>
+            <path d="M6 8a1 1 0 011-1h5a1 1 0 010 2H7A1 1 0 016 8zm0 4a1 1 0 011-1h3a1 1 0 010 2H7a1 1 0 01-1-1z"/>
+          </svg>
+        </div>
         <h3>Chưa có prompt nào</h3>
         <p>Tạo prompt đầu tiên để lưu các mẫu dùng lặp lại, copy nhanh hơn và dễ quản lý hơn.</p>
       </div>

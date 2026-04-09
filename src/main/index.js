@@ -79,6 +79,11 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, '../../index.html'));
 
+  // Clear cache trong dev mode
+  if (!app.isPackaged) {
+    mainWindow.webContents.session.clearCache();
+  }
+
   // Mở DevTools trong development
   // mainWindow.webContents.openDevTools();
 

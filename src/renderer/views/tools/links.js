@@ -155,77 +155,89 @@ async function handleSubmit(event) {
 
 async function handleListClick(event) {
   const actionEl = event.target.closest('[data-action]');
-  if (!actionEl) return;
-  event.preventDefault();
+  
+  // If clicked on a button with action, handle it
+  if (actionEl) {
+    event.preventDefault();
+    const card = actionEl.closest('.library-item');
+    if (!card) return;
 
-  const card = actionEl.closest('.library-item');
+    const link = links.find((item) => item.id === card.dataset.id);
+    if (!link) return;
+
+    const action = actionEl.dataset.action;
+
+    if (action === 'toggle-read') {
+      try {
+        const result = await ipcRenderer.invoke('link-toggle-read', {
+          id: link.id,
+          read: !link.read
+        });
+        links = result.links || [];
+        render();
+        ui.showToast(link.read ? 'Đã chuyển sang chưa đọc' : 'Đã đánh dấu đã đọc', 'success');
+      } catch (error) {
+        ui.showToast(error.message, 'error');
+      }
+      return;
+    }
+
+    if (action === 'toggle-pin') {
+      try {
+        const result = await ipcRenderer.invoke('link-toggle-pin', {
+          id: link.id,
+          pinned: !link.pinned
+        });
+        links = result.links || [];
+        render();
+        ui.showToast(link.pinned ? 'Đã bỏ ghim link' : 'Đã ghim link lên đầu', 'success');
+      } catch (error) {
+        ui.showToast(error.message, 'error');
+      }
+      return;
+    }
+
+    if (action === 'open') {
+      ipcRenderer.send('open-browser', link.url);
+      return;
+    }
+
+    if (action === 'edit') {
+      editingId = link.id;
+      ui.$('link-name').value = link.name;
+      ui.$('link-url').value = link.url;
+      ui.$('link-read').checked = !!link.read;
+      ui.$('link-category').value = link.category || '';
+      ui.$('link-form-title').textContent = 'Chỉnh sửa';
+      ui.$('link-submit-label').textContent = 'Lưu thay đổi';
+      openModal();
+      ui.$('link-name').focus();
+      return;
+    }
+
+    if (action === 'delete') {
+      if (!confirm(`Xóa link "${link.name}"?`)) return;
+      try {
+        const result = await ipcRenderer.invoke('link-delete', link.id);
+        links = result.links || [];
+        if (editingId === link.id) resetForm();
+        render();
+        ui.showToast('Đã xóa link', 'success');
+      } catch (error) {
+        ui.showToast(error.message, 'error');
+      }
+    }
+    return;
+  }
+
+  // If clicked on card itself (not a button), open the link
+  const card = event.target.closest('.library-item');
   if (!card) return;
 
   const link = links.find((item) => item.id === card.dataset.id);
   if (!link) return;
 
-  const action = actionEl.dataset.action;
-
-  if (action === 'toggle-read') {
-    try {
-      const result = await ipcRenderer.invoke('link-toggle-read', {
-        id: link.id,
-        read: !link.read
-      });
-      links = result.links || [];
-      render();
-      ui.showToast(link.read ? 'Đã chuyển sang chưa đọc' : 'Đã đánh dấu đã đọc', 'success');
-    } catch (error) {
-      ui.showToast(error.message, 'error');
-    }
-    return;
-  }
-
-  if (action === 'toggle-pin') {
-    try {
-      const result = await ipcRenderer.invoke('link-toggle-pin', {
-        id: link.id,
-        pinned: !link.pinned
-      });
-      links = result.links || [];
-      render();
-      ui.showToast(link.pinned ? 'Đã bỏ ghim link' : 'Đã ghim link lên đầu', 'success');
-    } catch (error) {
-      ui.showToast(error.message, 'error');
-    }
-    return;
-  }
-
-  if (action === 'open') {
-    ipcRenderer.send('open-browser', link.url);
-    return;
-  }
-
-  if (action === 'edit') {
-    editingId = link.id;
-    ui.$('link-name').value = link.name;
-    ui.$('link-url').value = link.url;
-    ui.$('link-read').checked = !!link.read;
-    ui.$('link-category').value = link.category || '';
-    ui.$('link-form-title').textContent = 'Chỉnh sửa';
-    ui.$('link-submit-label').textContent = 'Lưu thay đổi';
-    openModal();
-    ui.$('link-name').focus();
-    return;
-  }
-
-  if (action === 'delete') {
-    if (!confirm(`Xóa link "${link.name}"?`)) return;
-    try {
-      const result = await ipcRenderer.invoke('link-delete', link.id);
-      links = result.links || [];
-      if (editingId === link.id) resetForm();
-      render();
-      ui.showToast('Đã xóa link', 'success');
-    } catch (error) {
-      ui.showToast(error.message, 'error');
-    }
-  }
+  ipcRenderer.send('open-browser', link.url);
 }
 
 function openSyncModal() {
@@ -294,7 +306,12 @@ function render() {
   if (!filtered.length) {
     list.innerHTML = `
       <div class="library-empty">
-        <div class="library-empty-icon">L</div>
+        <div class="library-empty-icon">
+          <svg width="32" height="32" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M12.586 2.586a2 2 0 012.828 0l2 2a2 2 0 010 2.828l-3.293 3.293a1 1 0 11-1.414-1.414L16 6.414 13.586 4 10.707 6.879A1 1 0 119.293 5.465l3.293-3.293zM7.414 6.586a2 2 0 010 2.828L4.535 12.293 7 14.758l2.879-2.879a1 1 0 111.414 1.414l-3.293 3.293a2 2 0 01-2.828 0l-2-2a2 2 0 010-2.828l3.293-3.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            <path d="M6.464 13.536a1 1 0 010-1.414l5.657-5.658a1 1 0 111.415 1.415l-5.658 5.657a1 1 0 01-1.414 0z"/>
+          </svg>
+        </div>
         <h3>Chưa có link nào</h3>
         <p>Lưu link cần đọc, ghim link quan trọng lên trên và sync thêm bằng Google Sheets CSV khi cần.</p>
       </div>
@@ -302,16 +319,42 @@ function render() {
     return;
   }
 
-  list.innerHTML = sortLinks(filtered, currentSort).map((link) => `
+  // Group by category
+  const sorted = sortLinks(filtered, currentSort);
+  const grouped = {};
+  
+  sorted.forEach(link => {
+    const cat = link.category || autoCategorize(link.url);
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(link);
+  });
+
+  // Render columns
+  const categories = ['work', 'study', 'tool', 'sheet', 'social', 'auto', 'other'];
+  const columns = categories
+    .filter(cat => grouped[cat] && grouped[cat].length > 0)
+    .map(cat => `
+      <div class="link-column">
+        <h3 class="link-column-title">${getCategoryLabel(cat)}</h3>
+        <div class="link-column-items">
+          ${grouped[cat].map(link => renderLinkCard(link)).join('')}
+        </div>
+      </div>
+    `).join('');
+
+  list.innerHTML = columns;
+}
+
+function renderLinkCard(link) {
+  return `
     <article class="library-item link-item ${link.read ? 'is-read' : 'is-unread'} ${link.pinned ? 'is-pinned' : ''}" data-id="${link.id}">
       <div class="library-item-main">
         <div class="library-item-head">
           <div class="link-title-row">
             <h3>${ui.escapeHtml(link.name)}</h3>
             ${link.pinned ? '<span class="link-pin-indicator">Pinned</span>' : ''}
-            ${!link.read ? '<span class="badge badge-warning" style="font-size:10px;padding:2px 7px">Chưa đọc</span>' : ''}
+            ${!link.read ? '<span class="badge badge-warning" style="font-size:11px;padding:3px 9px;font-weight:700">Chưa đọc</span>' : ''}
           </div>
-          <span class="badge badge-secondary" style="align-self:flex-start">${getCategoryLabel(link.category)}</span>
         </div>
         <a href="#" class="library-link" data-action="open">${ui.escapeHtml(link.url)}</a>
         <div class="library-meta-row">
@@ -338,7 +381,7 @@ function render() {
         </div>
       </div>
     </article>
-  `).join('');
+  `;
 }
 
 function formatSyncMessage(result = {}) {
@@ -401,6 +444,63 @@ function getCategoryLabel(category) {
     other: 'Khác'
   };
   return map[key] || 'Tự động';
+}
+
+function autoCategorize(url) {
+  if (!url) return 'other';
+  
+  const urlLower = url.toLowerCase();
+  
+  // Sheet/Excel
+  if (urlLower.includes('docs.google.com/spreadsheets') || 
+      urlLower.includes('sheets.google.com') ||
+      urlLower.includes('excel.office.com') ||
+      urlLower.includes('onedrive.live.com') && urlLower.includes('xlsx')) {
+    return 'sheet';
+  }
+  
+  // Tool/Dev
+  if (urlLower.includes('github.com') ||
+      urlLower.includes('gitlab.com') ||
+      urlLower.includes('stackoverflow.com') ||
+      urlLower.includes('npmjs.com') ||
+      urlLower.includes('developer.mozilla.org') ||
+      urlLower.includes('dev.to') ||
+      urlLower.includes('medium.com') && urlLower.includes('dev')) {
+    return 'tool';
+  }
+  
+  // Study
+  if (urlLower.includes('coursera.org') ||
+      urlLower.includes('udemy.com') ||
+      urlLower.includes('edx.org') ||
+      urlLower.includes('khanacademy.org') ||
+      urlLower.includes('youtube.com') && (urlLower.includes('tutorial') || urlLower.includes('course'))) {
+    return 'study';
+  }
+  
+  // Social
+  if (urlLower.includes('facebook.com') ||
+      urlLower.includes('twitter.com') ||
+      urlLower.includes('x.com') ||
+      urlLower.includes('linkedin.com') ||
+      urlLower.includes('instagram.com') ||
+      urlLower.includes('tiktok.com')) {
+    return 'social';
+  }
+  
+  // Work (docs, drive, email, calendar)
+  if (urlLower.includes('docs.google.com/document') ||
+      urlLower.includes('drive.google.com') ||
+      urlLower.includes('mail.google.com') ||
+      urlLower.includes('calendar.google.com') ||
+      urlLower.includes('outlook.office.com') ||
+      urlLower.includes('teams.microsoft.com') ||
+      urlLower.includes('slack.com')) {
+    return 'work';
+  }
+  
+  return 'auto';
 }
 
 function sortLinks(items, sortKey) {
