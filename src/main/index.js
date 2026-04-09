@@ -1,5 +1,6 @@
 const { app, BrowserWindow, globalShortcut, ipcMain, shell } = require('electron');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const { load }     = require('./settings');
 const services     = require('./services');
@@ -11,6 +12,57 @@ let statusInterval  = null;
 let broadcastStatus = null;
 
 const settings = load();
+
+// ─── Check Admin ──────────────────────────────────────────────────────────────
+function isAdmin() {
+  try {
+    execSync('net session', { windowsHide: true, stdio: 'ignore' });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function restartAsAdmin() {
+  const fs = require('fs');
+  const isDev = !app.isPackaged;
+  
+  if (isDev) {
+    // Dev mode: dùng VBScript để request admin và chạy npm start
+    const cwd = process.cwd();
+    const vbsPath = path.join(cwd, 'restart-admin.vbs');
+    const vbsContent = `Set objShell = CreateObject("Shell.Application")
+objShell.ShellExecute "cmd.exe", "/c cd /d ""${cwd}"" && npm start", "", "runas", 1`;
+    
+    fs.writeFileSync(vbsPath, vbsContent, 'utf8');
+    
+    // Chạy VBScript
+    const { exec } = require('child_process');
+    exec(`cscript //nologo "${vbsPath}"`, { windowsHide: true });
+    
+    // Xóa VBS file sau 2 giây
+    setTimeout(() => {
+      try { fs.unlinkSync(vbsPath); } catch (_) {}
+    }, 2000);
+  } else {
+    // Production: restart app.exe với admin
+    const exePath = process.execPath;
+    const vbsPath = path.join(app.getPath('temp'), 'restart-admin.vbs');
+    const vbsContent = `Set objShell = CreateObject("Shell.Application")
+objShell.ShellExecute "${exePath}", "", "", "runas", 1`;
+    
+    fs.writeFileSync(vbsPath, vbsContent, 'utf8');
+    
+    const { exec } = require('child_process');
+    exec(`cscript //nologo "${vbsPath}"`, { windowsHide: true });
+    
+    setTimeout(() => {
+      try { fs.unlinkSync(vbsPath); } catch (_) {}
+    }, 2000);
+  }
+  
+  app.exit(0);
+}
 
 // ─── Window ───────────────────────────────────────────────────────────────────
 function createWindow() {
@@ -72,6 +124,26 @@ function createWindow() {
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
+  // Kiểm tra admin - nếu không có thì cảnh báo user
+  if (!isAdmin()) {
+    console.log('[Admin] App khong chay voi admin');
+    
+    const { dialog } = require('electron');
+    dialog.showMessageBoxSync({
+      type: 'warning',
+      title: 'Can quyen Administrator',
+      message: 'App can quyen Administrator de reset AnyDesk',
+      detail: 'Hay dong app va chay lai bang cach:\n\n1. Click phai vao PowerShell/Terminal\n2. Chon "Run as Administrator"\n3. Chay lai: npm start\n\nHoac khi build xong (npm run build), file .exe se tu dong yeu cau admin.',
+      buttons: ['Tiep tuc khong co admin', 'Thoat']
+    });
+    
+    // Vẫn cho chạy nhưng một số tính năng sẽ bị lỗi
+  }
+  
+  if (isAdmin()) {
+    console.log('[Admin] App dang chay voi quyen admin');
+  }
+  
   createWindow();
 
   tray.create(
