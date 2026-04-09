@@ -1,5 +1,12 @@
 const { ipcRenderer } = require('electron');
 
+function markAppReady() {
+  const body = document.body;
+  if (!body || body.classList.contains('app-ready')) return;
+  body.classList.add('app-ready');
+  body.classList.remove('app-loading');
+}
+
 const ui             = require('./ui');
 const state          = require('./state');
 const dashboard      = require('./views/dashboard');
@@ -80,3 +87,7 @@ commandPalette.init({ ipcRenderer, switchView, loadSettings: settingsView.load }
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 ipcRenderer.send('check-status');
 ipcRenderer.send('get-app-version');
+
+requestAnimationFrame(() => {
+  setTimeout(markAppReady, 2000);
+});

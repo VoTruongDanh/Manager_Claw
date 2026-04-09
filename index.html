@@ -6,7 +6,20 @@
   <title>Service Manager</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="app-loading">
+  <div id="app-loading-screen" class="app-loading-screen" aria-live="polite" role="status">
+    <div class="app-loading-box">
+      <div class="app-loading-logo">
+        <svg width="36" height="36" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+          <rect width="28" height="28" rx="6" fill="#000"/>
+          <path d="M14 7L21 14L14 21L7 14L14 7Z" fill="white"/>
+        </svg>
+      </div>
+      <h2>Service Manager</h2>
+      <p>Đang khởi tạo hệ thống...</p>
+      <div class="app-loading-bar" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
   <div class="app">
     <aside class="sidebar">
       <div class="logo">
