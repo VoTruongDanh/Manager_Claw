@@ -1,85 +1,64 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Build outputs
 dist/
 out/
 build/
+release/
+dist-electron/
+
+# Electron builder artifacts
 *.exe
+*.msi
 *.dmg
 *.AppImage
 *.deb
 *.rpm
 *.snap
-
-# Electron builder
-dist-electron/
-release/
+*.blockmap
+latest.yml
 
 # Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 lerna-debug.log*
-
-# OS files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
-
-# IDE / Editor
-.kiro/
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.project
-.classpath
-.settings/
-*.sublime-project
-*.sublime-workspace
 
 # Environment variables
 .env
 .env.local
 .env.*.local
 
-# Testing
+# Coverage
 coverage/
 .nyc_output/
 
-# Temporary files
-*.tmp
-*.temp
+# Cache / temp
 .cache/
 .temp/
+tmp/
+temp/
+*.tmp
+*.temp
 
-# Windows
-$RECYCLE.BIN/
-
-# macOS
-.AppleDouble
-.LSOverride
-Icon
-
-# Linux
-.directory
-.Trash-*
-
-# Application specific
+# Runtime / local app data (do not commit machine-specific state)
 settings.json
 *.db
 *.sqlite
 *.sqlite3
 
-# Debug
-.vscode/launch.json
-chrome-debug.log
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/

@@ -2434,70 +2434,64 @@ body.app-ready .app-loading-screen {
 /* ─── Prompt / Link Workspace ──────────────────────────────────────────────── */
 .library-layout {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: 18px;
   align-items: start;
 }
 
 .library-form-card,
 .library-list-card {
-  padding: 22px;
-}
-
-.library-card-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  margin-bottom: 18px;
-}
-
-.library-card-head h2 {
-  font-size: 18px;
-  margin-bottom: 6px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }
 
 .library-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .library-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .library-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .6px;
-  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
 }
 
 .library-input,
 .library-textarea {
   width: 100%;
   border: 1px solid var(--border);
+  border-radius: 10px;
   background: var(--surface-2);
   color: var(--text);
-  border-radius: var(--r);
-  padding: 12px 14px;
   font: inherit;
-  outline: none;
-  transition: border-color .15s, box-shadow .15s;
+  padding: 10px 12px;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+.library-input:hover,
+.library-textarea:hover {
+  background: color-mix(in srgb, var(--surface-2) 92%, var(--surface));
 }
 
 .library-input:focus,
 .library-textarea:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  outline: none;
+  border-color: color-mix(in srgb, var(--blue) 62%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 16%, transparent);
 }
 
 .library-textarea {
-  min-height: 220px;
+  min-height: 180px;
   resize: vertical;
   line-height: 1.6;
 }
@@ -2519,7 +2513,14 @@ body.app-ready .app-loading-screen {
 .library-list-tools {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.library-list-tools .shutdown-select {
+  flex: 1;
+  min-width: 120px;
 }
 
 #view-links .library-form-card,
@@ -2529,39 +2530,22 @@ body.app-ready .app-loading-screen {
   box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
 }
 
-#view-links .library-card-head h2 {
-  font-size: 22px;
-  letter-spacing: -.02em;
-}
-
-#view-links .library-card-head p {
-  color: var(--text-2);
-}
-
-.library-sort {
-  min-width: 160px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .library-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
 }
 
 .library-item {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   align-items: flex-start;
-  padding: 16px;
-  border-radius: var(--r-lg);
+  padding: 14px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
   transition: border-color .15s, box-shadow .15s, transform .15s;
-  min-height: 280px;
 }
 
 .library-item:hover {
@@ -2724,11 +2708,15 @@ body.app-ready .app-loading-screen {
   color: var(--blue);
   text-decoration: none;
   word-break: break-all;
-  font-size: 11px;
+  font-size: 12px;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .library-link:hover {
@@ -2743,7 +2731,7 @@ body.app-ready .app-loading-screen {
   justify-content: space-between;
   margin-top: auto;
   width: 100%;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--border);
 }
 
@@ -2828,6 +2816,21 @@ body.app-ready .app-loading-screen {
 
   .library-modal {
     padding: 20px;
+  }
+}
+
+@media (max-width: 860px) {
+  .library-form-card,
+  .library-list-card {
+    padding: 14px;
+  }
+
+  .library-list {
+    grid-template-columns: 1fr;
+  }
+
+  .library-list-tools .shutdown-select {
+    min-width: 100%;
   }
 }
 

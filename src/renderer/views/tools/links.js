@@ -12,7 +12,10 @@ function init() {
   if (!form) return;
 
   form.addEventListener('submit', handleSubmit);
-  ui.$('link-cancel-btn').addEventListener('click', resetForm);
+  ui.$('link-cancel-btn').addEventListener('click', () => {
+    resetForm();
+    closeModal();
+  });
   ui.$('link-refresh-btn').addEventListener('click', handleRefresh);
   ui.$('link-sort').addEventListener('change', (event) => {
     currentSort = event.target.value;
@@ -25,6 +28,21 @@ function init() {
   ui.$('link-list').addEventListener('click', handleListClick);
   ui.$('link-export-btn').addEventListener('click', handleExport);
   ui.$('link-import-btn').addEventListener('click', handleImport);
+
+  ui.$('link-open-modal-btn').addEventListener('click', () => {
+    resetForm();
+    openModal();
+  });
+  ui.$('link-modal-close-btn').addEventListener('click', () => {
+    resetForm();
+    closeModal();
+  });
+  ui.$('link-modal').addEventListener('click', (event) => {
+    if (event.target === ui.$('link-modal')) {
+      resetForm();
+      closeModal();
+    }
+  });
 
   ui.$('link-sync-settings-btn').addEventListener('click', openSyncModal);
   ui.$('link-sync-close-btn').addEventListener('click', closeSyncModal);
@@ -126,6 +144,7 @@ async function handleSubmit(event) {
     links = result.links || [];
     render();
     resetForm();
+    closeModal();
     ui.showToast(wasEditing ? 'Đã cập nhật link' : 'Đã lưu link', 'success');
   } catch (error) {
     ui.showToast(error.message, 'error');
@@ -188,10 +207,9 @@ async function handleListClick(event) {
     ui.$('link-url').value = link.url;
     ui.$('link-read').checked = !!link.read;
     ui.$('link-category').value = link.category || '';
-    ui.$('link-form-title').textContent = 'Chỉnh sửa link';
-    ui.$('link-form-desc').textContent = 'Cập nhật link và hệ thống sẽ làm mới preview nếu URL thay đổi.';
+    ui.$('link-form-title').textContent = 'Chỉnh sửa';
     ui.$('link-submit-label').textContent = 'Lưu thay đổi';
-    ui.$('link-cancel-btn').style.display = 'inline-flex';
+    openModal();
     ui.$('link-name').focus();
     return;
   }
@@ -261,10 +279,8 @@ function resetForm() {
   editingId = null;
   ui.$('link-form').reset();
   ui.$('link-category').value = '';
-  ui.$('link-form-title').textContent = 'Lưu link mới';
-  ui.$('link-form-desc').textContent = 'Lưu link với title/favicon để quét nhanh trong danh sách.';
+  ui.$('link-form-title').textContent = 'Tên link';
   ui.$('link-submit-label').textContent = 'Lưu link';
-  ui.$('link-cancel-btn').style.display = 'none';
 }
 
 function render() {
@@ -288,19 +304,14 @@ function render() {
 
   list.innerHTML = sortLinks(filtered, currentSort).map((link) => `
     <article class="library-item link-item ${link.read ? 'is-read' : 'is-unread'} ${link.pinned ? 'is-pinned' : ''}" data-id="${link.id}">
-      <div class="link-thumbnail">
-        ${renderThumbnail(link)}
-      </div>
       <div class="library-item-main">
         <div class="library-item-head">
           <div class="link-title-row">
             <h3>${ui.escapeHtml(link.name)}</h3>
             ${link.pinned ? '<span class="link-pin-indicator">Pinned</span>' : ''}
+            ${!link.read ? '<span class="badge badge-warning" style="font-size:10px;padding:2px 7px">Chưa đọc</span>' : ''}
           </div>
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-            <span class="badge badge-secondary">${getCategoryLabel(link.category)}</span>
-            <span class="badge ${link.read ? 'badge-secondary' : 'badge-warning'}">${link.read ? 'Đã đọc' : 'Chưa đọc'}</span>
-          </div>
+          <span class="badge badge-secondary" style="align-self:flex-start">${getCategoryLabel(link.category)}</span>
         </div>
         <a href="#" class="library-link" data-action="open">${ui.escapeHtml(link.url)}</a>
         <div class="library-meta-row">
@@ -440,6 +451,18 @@ function formatDate(value) {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function openModal() {
+  const modal = ui.$('link-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  const modal = ui.$('link-modal');
+  if (!modal) return;
+  modal.style.display = 'none';
 }
 
 module.exports = { init, load };

@@ -124,27 +124,27 @@ function createWindow() {
 
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
-  // Kiểm tra admin - nếu không có thì cảnh báo user
-  if (!isAdmin()) {
+  const hasAdmin = isAdmin();
+
+  // Kiểm tra admin - nếu không có thì chỉ báo nhẹ, không chặn app
+  if (!hasAdmin) {
     console.log('[Admin] App khong chay voi admin');
-    
-    const { dialog } = require('electron');
-    dialog.showMessageBoxSync({
-      type: 'warning',
-      title: 'Can quyen Administrator',
-      message: 'App can quyen Administrator de reset AnyDesk',
-      detail: 'Hay dong app va chay lai bang cach:\n\n1. Click phai vao PowerShell/Terminal\n2. Chon "Run as Administrator"\n3. Chay lai: npm start\n\nHoac khi build xong (npm run build), file .exe se tu dong yeu cau admin.',
-      buttons: ['Tiep tuc khong co admin', 'Thoat']
-    });
-    
-    // Vẫn cho chạy nhưng một số tính năng sẽ bị lỗi
-  }
-  
-  if (isAdmin()) {
+  } else {
     console.log('[Admin] App dang chay voi quyen admin');
   }
   
   createWindow();
+
+  if (!hasAdmin) {
+    app.once('browser-window-created', (_, win) => {
+      win.webContents.once('did-finish-load', () => {
+        win.webContents.send(
+          'main-toast',
+          'Ứng dụng đang chạy không có quyền Administrator. Tính năng reset AnyDesk có thể không hoạt động đầy đủ.'
+        );
+      });
+    });
+  }
 
   tray.create(
     path.join(__dirname, '../../icon.png'),

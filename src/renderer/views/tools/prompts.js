@@ -9,9 +9,38 @@ function init() {
   if (!form) return;
 
   form.addEventListener('submit', handleSubmit);
-  ui.$('prompt-cancel-btn').addEventListener('click', resetForm);
-  ui.$('prompt-refresh-btn').addEventListener('click', load);
+  ui.$('prompt-cancel-btn').addEventListener('click', () => {
+    resetForm();
+    closeModal();
+  });
   ui.$('prompt-list').addEventListener('click', handleListClick);
+
+  const openBtn = ui.$('prompt-open-modal-btn');
+  const closeBtn = ui.$('prompt-modal-close-btn');
+  const modal = ui.$('prompt-modal');
+
+  if (openBtn) {
+    openBtn.addEventListener('click', () => {
+      resetForm();
+      openModal();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      resetForm();
+      closeModal();
+    });
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        resetForm();
+        closeModal();
+      }
+    });
+  }
 
   load();
 }
@@ -43,6 +72,7 @@ async function handleSubmit(event) {
     prompts = result.prompts || [];
     render();
     resetForm();
+    closeModal();
     ui.showToast(wasEditing ? 'Đã cập nhật prompt' : 'Đã lưu prompt', 'success');
   } catch (error) {
     ui.showToast(error.message, 'error');
@@ -71,10 +101,9 @@ async function handleListClick(event) {
     editingId = prompt.id;
     ui.$('prompt-name').value = prompt.name;
     ui.$('prompt-content').value = prompt.content;
-    ui.$('prompt-form-title').textContent = 'Chỉnh sửa prompt';
-    ui.$('prompt-form-desc').textContent = 'Cập nhật tên và nội dung rồi lưu lại.';
+    ui.$('prompt-form-title').textContent = 'Chỉnh sửa';
     ui.$('prompt-submit-label').textContent = 'Lưu thay đổi';
-    ui.$('prompt-cancel-btn').style.display = 'inline-flex';
+    openModal();
     ui.$('prompt-name').focus();
     return;
   }
@@ -97,10 +126,8 @@ async function handleListClick(event) {
 function resetForm() {
   editingId = null;
   ui.$('prompt-form').reset();
-  ui.$('prompt-form-title').textContent = 'Tạo prompt mới';
-  ui.$('prompt-form-desc').textContent = 'Lưu prompt dùng nhiều lần để copy nhanh khi cần.';
+  ui.$('prompt-form-title').textContent = 'Tên prompt';
   ui.$('prompt-submit-label').textContent = 'Lưu prompt';
-  ui.$('prompt-cancel-btn').style.display = 'none';
 }
 
 function render() {
@@ -125,11 +152,8 @@ function render() {
     <article class="library-item" data-id="${prompt.id}">
       <div class="library-item-main">
         <div class="library-item-head">
-          <div>
-            <h3>${ui.escapeHtml(prompt.name)}</h3>
-            <p class="library-meta">Cập nhật ${formatDate(prompt.updatedAt)}${prompt.createdAt !== prompt.updatedAt ? ` • Tạo ${formatDate(prompt.createdAt)}` : ''}</p>
-          </div>
-          <span class="badge badge-secondary">Prompt</span>
+          <h3>${ui.escapeHtml(prompt.name)}</h3>
+          <p class="library-meta">${formatDate(prompt.updatedAt)}</p>
         </div>
         <pre class="library-content">${ui.escapeHtml(prompt.content)}</pre>
       </div>
@@ -151,6 +175,18 @@ function formatDate(value) {
     month: '2-digit',
     year: 'numeric'
   });
+}
+
+function openModal() {
+  const modal = ui.$('prompt-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  const modal = ui.$('prompt-modal');
+  if (!modal) return;
+  modal.style.display = 'none';
 }
 
 module.exports = { init, load };
