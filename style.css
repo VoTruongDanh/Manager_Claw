@@ -181,6 +181,13 @@ body.app-ready .app-loading-screen {
   flex-shrink: 0;
 }
 
+.nav-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 12px;
+  opacity: 0.5;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
