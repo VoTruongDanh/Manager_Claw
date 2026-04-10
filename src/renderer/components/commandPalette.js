@@ -11,9 +11,24 @@ const ICON = {
 
 function init({ ipcRenderer, switchView, loadSettings }) {
   const overlay = $('command-overlay');
+  if (!overlay) {
+    console.error('Command overlay not found');
+    return { addCommand: () => {} };
+  }
+  
   const dialog = overlay.querySelector('.command-dialog');
+  if (!dialog) {
+    console.error('Command dialog not found');
+    return { addCommand: () => {} };
+  }
+  
   const input = $('command-input');
   const list = $('command-list');
+  if (!input || !list) {
+    console.error('Command input or list not found');
+    return { addCommand: () => {} };
+  }
+  
   let activeIdx = -1;
   let filtered = [];
 

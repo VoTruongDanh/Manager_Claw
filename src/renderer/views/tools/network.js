@@ -21,6 +21,20 @@ function init() {
     list.addEventListener('click', handleListClick);
   }
   
+  // IP modal close button
+  const ipModalClose = ui.$('network-ip-modal-close');
+  const ipModal = ui.$('network-ip-modal');
+  if (ipModalClose && ipModal) {
+    ipModalClose.addEventListener('click', () => {
+      ipModal.style.display = 'none';
+    });
+    ipModal.addEventListener('click', (e) => {
+      if (e.target === ipModal) {
+        ipModal.style.display = 'none';
+      }
+    });
+  }
+  
   load();
   
   // Auto-refresh every 10 seconds
@@ -36,6 +50,17 @@ async function load() {
   
   try {
     adapters = await ipcRenderer.invoke('network-get-adapters');
+    
+    // Load IP for each adapter
+    for (const adapter of adapters) {
+      try {
+        const ips = await ipcRenderer.invoke('network-get-ip-config', adapter.name);
+        adapter.ips = ips || [];
+      } catch (error) {
+        adapter.ips = [];
+      }
+    }
+    
     render();
   } catch (error) {
     ui.showToast(`Không tải được adapters: ${error.message}`, 'error');
@@ -112,7 +137,13 @@ async function handleListClick(event) {
     // Refresh after 2 seconds
     setTimeout(load, 2000);
   } catch (error) {
-    ui.showToast(error.message, 'error');
+    // Check if it's a permission error
+    const errorMsg = error.message || '';
+    if (errorMsg.includes('Access is denied') || errorMsg.includes('PermissionDenied')) {
+      ui.showToast('Cần quyền Administrator! Khởi động lại app bằng "Run as Administrator"', 'error');
+    } else {
+      ui.showToast(errorMsg, 'error');
+    }
   } finally {
     actionEl.disabled = false;
     actionEl.classList.remove('loading');
@@ -128,8 +159,24 @@ async function showIPConfig(adapterName) {
       return;
     }
     
-    const ipList = ips.map(ip => `${ip.address}/${ip.prefix} (${ip.family})`).join('\n');
-    ui.showAlert('IP Configuration', ipList, 'info');
+    // Show in modal
+    const modal = ui.$('network-ip-modal');
+    const title = ui.$('network-ip-modal-adapter');
+    const content = ui.$('network-ip-modal-content');
+    
+    if (!modal || !title || !content) {
+      // Fallback to toast
+      const ipList = ips.map(ip => `${ip.address}/${ip.prefix} (${ip.family})`).join(', ');
+      ui.showToast(`IP: ${ipList}`, 'info');
+      return;
+    }
+    
+    title.textContent = adapterName;
+    content.textContent = ips.map(ip => 
+      `${ip.family === 'IPv4' ? '🌐' : '🌍'} ${ip.address}/${ip.prefix} (${ip.family})`
+    ).join('\n');
+    
+    modal.style.display = 'flex';
   } catch (error) {
     ui.showToast(error.message, 'error');
   }
@@ -173,8 +220,13 @@ function renderAdapterCard(adapter) {
   const typeIcon = getTypeIcon(adapter.type);
   const typeLabel = getTypeLabel(adapter.type);
   
+  // Get primary IP (first IPv4 or first IP)
+  const ipv4 = adapter.ips?.find(ip => ip.family === 'IPv4');
+  const primaryIP = ipv4 || adapter.ips?.[0];
+  const ipDisplay = primaryIP ? `${primaryIP.address}` : 'N/A';
+  
   return `
-    <div class="network-adapter-card" data-name="${ui.escapeHtml(adapter.name)}">
+    <div class="network-adapter-card" data-name="${ui.escapeHtml(adapter.name)}" data-status="${adapter.status}">
       <div class="network-adapter-header">
         <div class="network-adapter-icon ${adapter.type}">
           ${typeIcon}
@@ -195,6 +247,10 @@ function renderAdapterCard(adapter) {
           <span class="network-meta-value">${typeLabel}</span>
         </div>
         <div class="network-meta-item">
+          <span class="network-meta-label">IP Address</span>
+          <span class="network-meta-value" title="${adapter.ips?.map(ip => `${ip.address}/${ip.prefix} (${ip.family})`).join('\n') || 'N/A'}">${ipDisplay}</span>
+        </div>
+        <div class="network-meta-item">
           <span class="network-meta-label">MAC</span>
           <span class="network-meta-value">${adapter.mac || 'N/A'}</span>
         </div>
@@ -206,28 +262,30 @@ function renderAdapterCard(adapter) {
       
       <div class="network-adapter-actions">
         ${isDisabled ? `
-          <button class="btn btn-success btn-sm" data-action="enable">
+          <button class="btn btn-success btn-sm" data-action="enable" title="Bật adapter (cần admin)">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
             Bật
           </button>
         ` : `
-          <button class="btn btn-secondary btn-sm" data-action="disable">
+          <button class="btn btn-secondary btn-sm" data-action="disable" title="Tắt adapter (cần admin)">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
             Tắt
           </button>
         `}
-        <button class="btn btn-secondary btn-sm" data-action="reset">
+        <button class="btn btn-secondary btn-sm" data-action="reset" title="Reset adapter (cần admin)">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
           Reset
         </button>
         ${!isDisabled ? `
-          <button class="btn btn-secondary btn-sm" data-action="renew-ip">
+          <button class="btn btn-secondary btn-sm" data-action="renew-ip" title="Release và renew IP">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/></svg>
             Renew IP
           </button>
-          <button class="btn btn-secondary btn-sm" data-action="show-ip">
+        ` : ''}
+        ${adapter.ips && adapter.ips.length > 1 ? `
+          <button class="btn btn-secondary btn-sm" data-action="show-ip" title="Xem tất cả IP addresses">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
-            IP Info
+            Xem tất cả (${adapter.ips.length})
           </button>
         ` : ''}
       </div>
