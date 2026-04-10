@@ -183,14 +183,24 @@ function spawnService(config = {}) {
 
     // OpenClaw cần thời gian khởi động lâu hơn (20-25s), Router nhanh hơn (2-3s)
     const startTimeoutDuration = cfg.key === 'openclaw' ? 25000 : 3000;
+    const gracePeriod = cfg.key === 'openclaw' ? 10000 : 3000; // Grace period trước khi báo hard fail
+    
     const startTimeout = setTimeout(async () => {
       const check = await checkPort(processInfo[cfg.key].port);
       if (!check.listening) {
-        emitStatus(cfg.key, {
-          running: false,
-          error: true,
-          message: `${cfg.label} khong khoi dong duoc. Kiem tra: npm list -g ${cfg.cmd}`
-        });
+        emitLog(cfg.key, `${cfg.label} chua khoi dong xong sau ${startTimeoutDuration / 1000}s, dang cho them...`);
+        
+        // Grace period: đợi thêm trước khi báo fail
+        setTimeout(async () => {
+          const recheckPort = await checkPort(processInfo[cfg.key].port);
+          if (!recheckPort.listening && processes[cfg.key]) {
+            emitStatus(cfg.key, {
+              running: false,
+              error: true,
+              message: `${cfg.label} khoi dong cham hoac that bai. Kiem tra: npm list -g ${cfg.cmd}`
+            });
+          }
+        }, gracePeriod);
       }
     }, startTimeoutDuration);
 
@@ -249,49 +259,74 @@ function spawnService(config = {}) {
 
 function stopService({ key, keepExpectedRunning = false, silentStatus = false } = {}) {
   const cfg = serviceConfigs[key];
-  if (!cfg) return;
+  if (!cfg) return Promise.resolve();
 
-  const proc = processes[key];
-  const extPid = processInfo[key].externalPid;
+  return new Promise((resolve) => {
+    const proc = processes[key];
+    const extPid = processInfo[key].externalPid;
 
-  processInfo[key].expectedRunning = keepExpectedRunning;
-  processInfo[key].stopping = !!proc;
-  processInfo[key].unresponsiveSince = null;
+    processInfo[key].expectedRunning = keepExpectedRunning;
+    processInfo[key].stopping = !!proc;
+    processInfo[key].unresponsiveSince = null;
 
-  if (proc) {
-    try {
-      proc.kill('SIGTERM');
-    } catch (err) {
-      exec(`taskkill /PID ${proc.pid} /F /T`, () => {});
-    }
+    if (proc) {
+      const closeHandler = () => {
+        if (!silentStatus) {
+          emitStatus(key, { running: false, message: `${cfg.label} da dung` });
+        }
+        resolve();
+      };
 
-    if (!silentStatus) {
-      emitStatus(key, { running: false, message: `${cfg.label} da dung` });
-    }
-    return;
-  }
+      proc.once('close', closeHandler);
 
-  processInfo[key].stopping = false;
-
-  if (extPid) {
-    exec(`taskkill /PID ${extPid} /F /T`, (err) => {
-      if (!err) {
-        resetRuntime(key, { clearExpectation: !keepExpectedRunning });
-        if (!silentStatus) emitStatus(key, { running: false, message: `${cfg.label} da dung (PID ${extPid})` });
-      } else if (!silentStatus) {
-        emitStatus(key, {
-          running: false,
-          error: true,
-          message: `Khong the dung ${cfg.label}: ${err.message}`
-        });
+      try {
+        proc.kill('SIGTERM');
+      } catch (err) {
+        exec(`taskkill /PID ${proc.pid} /F /T`, () => {});
       }
-    });
-  } else if (!silentStatus) {
-    emitStatus(key, { running: false, message: `${cfg.label} khong chay` });
-  }
+
+      // Timeout fallback: nếu sau 5 giây process vẫn chưa thoát, force kill và resolve
+      setTimeout(() => {
+        if (processes[key] === proc) {
+          proc.removeListener('close', closeHandler);
+          exec(`taskkill /PID ${proc.pid} /F /T`, () => {
+            resetRuntime(key, { clearExpectation: !keepExpectedRunning });
+            if (!silentStatus) {
+              emitStatus(key, { running: false, message: `${cfg.label} da dung (force)` });
+            }
+            resolve();
+          });
+        }
+      }, 5000);
+      return;
+    }
+
+    processInfo[key].stopping = false;
+
+    if (extPid) {
+      exec(`taskkill /PID ${extPid} /F /T`, (err) => {
+        if (!err) {
+          resetRuntime(key, { clearExpectation: !keepExpectedRunning });
+          if (!silentStatus) emitStatus(key, { running: false, message: `${cfg.label} da dung (PID ${extPid})` });
+        } else if (!silentStatus) {
+          emitStatus(key, {
+            running: false,
+            error: true,
+            message: `Khong the dung ${cfg.label}: ${err.message}`
+          });
+        }
+        resolve();
+      });
+    } else {
+      if (!silentStatus) {
+        emitStatus(key, { running: false, message: `${cfg.label} khong chay` });
+      }
+      resolve();
+    }
+  });
 }
 
-function restartService({ key, reason = 'manual', silentStopStatus = false } = {}) {
+async function restartService({ key, reason = 'manual', silentStopStatus = false } = {}) {
   const cfg = serviceConfigs[key];
   if (!cfg) return;
 
@@ -304,8 +339,13 @@ function restartService({ key, reason = 'manual', silentStopStatus = false } = {
   }
 
   if (hasLiveProcess) {
-    stopService({ key, keepExpectedRunning: true, silentStatus: silentStopStatus });
-    setTimeout(() => spawnService({ key, expectedRunning: true }), 1500);
+    // Đợi process thoát hoàn toàn trước khi start lại
+    await stopService({ key, keepExpectedRunning: true, silentStatus: silentStopStatus });
+    
+    // Thêm grace period để đảm bảo port được giải phóng
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    spawnService({ key, expectedRunning: true });
   } else {
     spawnService({ key, expectedRunning: true });
   }

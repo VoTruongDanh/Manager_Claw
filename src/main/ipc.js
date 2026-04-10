@@ -4,6 +4,8 @@ const shutdownTools = require('./tools/shutdown');
 const idmTools      = require('./tools/idm-reset');
 const anydeskTools  = require('./tools/anydesk-reset');
 const networkTools  = require('./tools/network');
+const hardwareTools = require('./tools/hardware');
+const copyPasteSync = require('./tools/copy-paste-sync');
 const syncToken = require('./syncToken');
 
 const SERVICE_CONFIGS = {
@@ -927,6 +929,80 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
 
   ipcMain.handle('network-get-ip-config', async (event, name) => {
     return await networkTools.getIPConfig(name);
+  });
+
+  // Hardware info handlers
+  ipcMain.handle('hardware-get-all', async () => {
+    return await hardwareTools.getAllHardwareInfo();
+  });
+
+  ipcMain.handle('hardware-get-cpu', async () => {
+    return await hardwareTools.getCPUInfo();
+  });
+
+  ipcMain.handle('hardware-get-memory', async () => {
+    return await hardwareTools.getMemoryInfo();
+  });
+
+  ipcMain.handle('hardware-get-disk', async () => {
+    return await hardwareTools.getDiskInfo();
+  });
+
+  ipcMain.handle('hardware-get-gpu', async () => {
+    return await hardwareTools.getGPUInfo();
+  });
+
+  ipcMain.handle('hardware-get-network', async () => {
+    return await hardwareTools.getNetworkInfo();
+  });
+
+  ipcMain.handle('hardware-get-system', async () => {
+    return await hardwareTools.getSystemInfo();
+  });
+
+  ipcMain.handle('hardware-get-battery', async () => {
+    return await hardwareTools.getBatteryInfo();
+  });
+
+  // Copy-Paste Sync handlers
+  ipcMain.handle('copypaste-upload', async () => {
+    const payload = sanitizeSettingsForSync(settings);
+    const result = await copyPasteSync.uploadData(payload);
+    
+    if (result.ok) {
+      settings.copypaste_code = result.code;
+      settings.copypaste_uploaded_at = result.timestamp;
+      persistSettings(settings);
+    }
+    
+    return result;
+  });
+
+  ipcMain.handle('copypaste-download', async (_, code) => {
+    const result = await copyPasteSync.downloadData(code);
+    
+    if (result.ok && result.data) {
+      const keys = ['autoLaunch', 'autoHeal', 'startMinimized', 'autoStartRouter', 'autoStartOpenclaw', 'minimizeToTray', 'prompts', 'links', 'sync_url'];
+      keys.forEach((key) => {
+        if (result.data[key] !== undefined) {
+          settings[key] = result.data[key];
+        }
+      });
+      
+      settings.copypaste_code = code;
+      settings.copypaste_downloaded_at = result.timestamp;
+      persistSettings(settings);
+    }
+    
+    return result;
+  });
+
+  ipcMain.handle('copypaste-get-info', async () => {
+    return {
+      code: settings.copypaste_code || '',
+      uploadedAt: settings.copypaste_uploaded_at || null,
+      downloadedAt: settings.copypaste_downloaded_at || null
+    };
   });
 
   return { broadcastStatus };

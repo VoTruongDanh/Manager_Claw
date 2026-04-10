@@ -38,7 +38,9 @@ function updateMenu({ routerRunning, openclawRunning }) {
     { label: '❌  Thoát', click: () => _onAction('quit') }
   ]);
   tray.setContextMenu(menu);
-  tray.setToolTip(`9Router: ${routerRunning ? '🟢' : '🔴'}  OpenClaw: ${openclawRunning ? '🟢' : '🔴'}`);
+  const routerStatus = routerRunning ? 'Running' : 'Stopped';
+  const openclawStatus = openclawRunning ? 'Running' : 'Stopped';
+  tray.setToolTip(`9Router: ${routerStatus}\nOpenClaw: ${openclawStatus}`);
 }
 
 function notify(title, content) {

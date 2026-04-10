@@ -66,6 +66,91 @@ function init() {
     ipcRenderer.send('set-auto-heal', current.autoHeal);
     ipcRenderer.send('save-settings', current);
   });
+
+  // Copy-Paste Sync
+  ui.$('copypaste-upload-btn').addEventListener('click', handleCopyPasteUpload);
+  ui.$('copypaste-download-btn').addEventListener('click', handleCopyPasteDownload);
+  
+  loadCopyPasteInfo();
+}
+
+async function loadCopyPasteInfo() {
+  try {
+    const info = await ipcRenderer.invoke('copypaste-get-info');
+    
+    ui.$('copypaste-current-code').textContent = info.code || '--';
+    ui.$('copypaste-upload-time').textContent = info.uploadedAt 
+      ? new Date(info.uploadedAt).toLocaleString('vi-VN')
+      : '--';
+    ui.$('copypaste-download-time').textContent = info.downloadedAt
+      ? new Date(info.downloadedAt).toLocaleString('vi-VN')
+      : '--';
+  } catch (error) {
+    console.error('Failed to load copy-paste info:', error);
+  }
+}
+
+async function handleCopyPasteUpload() {
+  const btn = ui.$('copypaste-upload-btn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  
+  try {
+    const result = await ipcRenderer.invoke('copypaste-upload');
+    
+    if (result.ok) {
+      ui.$('copypaste-current-code').textContent = result.code;
+      ui.$('copypaste-upload-time').textContent = new Date(result.timestamp).toLocaleString('vi-VN');
+      
+      // Copy code to clipboard
+      navigator.clipboard.writeText(result.code);
+      
+      ui.showToast(`Upload thành công! Code: ${result.code} (đã copy)`, 'success');
+    } else {
+      ui.showToast(`Upload thất bại: ${result.error}`, 'error');
+    }
+  } catch (error) {
+    ui.showToast(`Lỗi: ${error.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
+}
+
+async function handleCopyPasteDownload() {
+  const code = prompt('Nhập code để download cấu hình:');
+  
+  if (!code || !code.trim()) {
+    return;
+  }
+  
+  const btn = ui.$('copypaste-download-btn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  
+  try {
+    const result = await ipcRenderer.invoke('copypaste-download', code.trim());
+    
+    if (result.ok) {
+      ui.$('copypaste-current-code').textContent = code.trim();
+      ui.$('copypaste-download-time').textContent = new Date(result.timestamp).toLocaleString('vi-VN');
+      
+      ui.showToast('Download thành công! Đang tải lại cấu hình...', 'success');
+      
+      // Reload settings
+      setTimeout(() => {
+        load();
+        ui.showToast('Đã áp dụng cấu hình mới', 'success');
+      }, 500);
+    } else {
+      ui.showToast(`Download thất bại: ${result.error}`, 'error');
+    }
+  } catch (error) {
+    ui.showToast(`Lỗi: ${error.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+  }
 }
 
 module.exports = { init, load };
