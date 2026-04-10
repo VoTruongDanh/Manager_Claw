@@ -13,6 +13,7 @@ const dashboard      = require('./views/dashboard');
 const logsView       = require('./views/logs');
 const settingsView   = require('./views/settings');
 const shutdownView   = require('./views/tools/shutdown');
+const networkView    = require('./views/tools/network');
 const idmResetView   = require('./views/tools/idm-reset');
 const anydeskView    = require('./views/tools/anydesk-reset');
 const promptsView    = require('./views/tools/prompts');
@@ -36,6 +37,7 @@ const views = {
   logs:      ui.$('view-logs'),
   settings:  ui.$('view-settings'),
   shutdown:  ui.$('view-shutdown'),
+  network:   ui.$('view-network'),
   idmReset:  ui.$('view-idm-reset'),
   prompts:   ui.$('view-prompts'),
   links:     ui.$('view-links')
@@ -53,6 +55,7 @@ function switchView(name) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   ui.$(`nav-${name}`).classList.add('active');
   if (name === 'settings') settingsView.load();
+  if (name === 'network') networkView.load();
   if (name === 'prompts') promptsView.load();
   if (name === 'links') linksView.load();
 }
@@ -61,6 +64,7 @@ ui.$('nav-dashboard').addEventListener('click', (e) => { e.preventDefault(); swi
 ui.$('nav-logs').addEventListener('click',      (e) => { e.preventDefault(); switchView('logs'); });
 ui.$('nav-settings').addEventListener('click',  (e) => { e.preventDefault(); switchView('settings'); });
 ui.$('nav-shutdown').addEventListener('click',  (e) => { e.preventDefault(); switchView('shutdown'); });
+ui.$('nav-network').addEventListener('click',   (e) => { e.preventDefault(); switchView('network'); });
 ui.$('nav-idm-reset').addEventListener('click', (e) => { e.preventDefault(); switchView('idmReset'); });
 ui.$('nav-prompts').addEventListener('click',   (e) => { e.preventDefault(); switchView('prompts'); });
 ui.$('nav-links').addEventListener('click',     (e) => { e.preventDefault(); switchView('links'); });
@@ -74,6 +78,7 @@ dashboard.init();
 logsView.init();
 settingsView.init();
 shutdownView.init();
+networkView.init();
 idmResetView.init();
 anydeskView.init();
 promptsView.init();

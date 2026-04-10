@@ -2586,7 +2586,7 @@ body.app-ready .app-loading-screen {
 #view-prompts .library-item {
   gap: 12px;
   padding: 16px 18px;
-  min-height: 380px;
+  min-height: 900px;
 }
 
 #view-prompts .library-item-head {
@@ -3863,4 +3863,156 @@ body.app-ready .app-loading-screen {
   flex-direction: column;
   gap: 16px;
   max-width: 680px;
+}
+
+/* ─── Network Manager ────────────────────────────────────────────────────────── */
+.network-adapters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 16px;
+}
+
+.network-adapter-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: box-shadow .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+}
+
+.network-adapter-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  transform: translateY(-1px);
+}
+
+.network-adapter-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.network-adapter-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r);
+  background: var(--text);
+  color: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.network-adapter-icon.wifi {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.network-adapter-icon.ethernet {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.network-adapter-icon.virtual {
+  background: linear-gradient(135deg, #a855f7, #9333ea);
+}
+
+.network-adapter-icon.bluetooth {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.network-adapter-icon.other {
+  background: linear-gradient(135deg, #71717a, #52525b);
+}
+
+.network-adapter-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.network-adapter-info h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-adapter-desc {
+  font-size: 11.5px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-adapter-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.network-meta-item {
+  padding: 12px 20px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.network-meta-item:last-child {
+  border-right: none;
+}
+
+.network-meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--text-3);
+}
+
+.network-meta-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'Consolas', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-adapter-actions {
+  display: flex;
+  gap: 6px;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1200px) {
+  .network-adapters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .network-adapters-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .network-adapter-meta {
+    grid-template-columns: 1fr;
+  }
+  
+  .network-meta-item {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .network-meta-item:last-child {
+    border-bottom: none;
+  }
 }

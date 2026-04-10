@@ -3,6 +3,7 @@ const zlib = require('zlib');
 const shutdownTools = require('./tools/shutdown');
 const idmTools      = require('./tools/idm-reset');
 const anydeskTools  = require('./tools/anydesk-reset');
+const networkTools  = require('./tools/network');
 const syncToken = require('./syncToken');
 
 const SERVICE_CONFIGS = {
@@ -897,6 +898,35 @@ function register({ ipcMain, app, shell, settings, services, tray, getWindow }) 
 
   ipcMain.handle('anydesk-reset-id', async () => {
     return await anydeskTools.resetAnyDeskId();
+  });
+
+  // Network management handlers
+  ipcMain.handle('network-get-adapters', async () => {
+    return await networkTools.getAdapters();
+  });
+
+  ipcMain.handle('network-enable-adapter', async (event, name) => {
+    return await networkTools.enableAdapter(name);
+  });
+
+  ipcMain.handle('network-disable-adapter', async (event, name) => {
+    return await networkTools.disableAdapter(name);
+  });
+
+  ipcMain.handle('network-reset-adapter', async (event, name) => {
+    return await networkTools.resetAdapter(name);
+  });
+
+  ipcMain.handle('network-flush-dns', async () => {
+    return await networkTools.flushDNS();
+  });
+
+  ipcMain.handle('network-release-renew-ip', async (event, name) => {
+    return await networkTools.releaseRenewIP(name);
+  });
+
+  ipcMain.handle('network-get-ip-config', async (event, name) => {
+    return await networkTools.getIPConfig(name);
   });
 
   return { broadcastStatus };

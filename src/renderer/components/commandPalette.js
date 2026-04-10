@@ -33,6 +33,7 @@ function init({ ipcRenderer, switchView, loadSettings }) {
     { label: 'Chuyển sang Settings', icon: ICON.view, action: () => { switchView('settings'); loadSettings(); } },
     { label: 'Chuyển sang Prompt', icon: ICON.view, action: () => switchView('prompts') },
     { label: 'Chuyển sang Link', icon: ICON.view, action: () => switchView('links') },
+    { label: 'Mở Quản lý mạng', icon: ICON.view, action: () => switchView('network') },
     { label: 'Mở Reset', icon: ICON.view, action: () => switchView('idmReset') },
     { label: 'Hẹn giờ tắt máy', icon: ICON.view, action: () => switchView('shutdown') },
     { label: 'Bật/Tắt Dark Mode', icon: ICON.theme, action: () => $('theme-toggle').click() },
