@@ -1,103 +1,127 @@
 const { ipcRenderer } = require('electron');
 
+const ui = require('./ui');
+const dashboard = require('./views/dashboard');
+const logsView = require('./views/logs');
+const settingsView = require('./views/settings');
+const shutdownView = require('./views/tools/shutdown');
+const networkView = require('./views/tools/network');
+const hardwareView = require('./views/tools/hardware');
+const idmResetView = require('./views/tools/idm-reset');
+const anydeskView = require('./views/tools/anydesk-reset');
+const promptsView = require('./views/tools/prompts');
+const linksView = require('./views/tools/links');
+const logPanel = require('./components/logPanel');
+const commandPalette = require('./components/commandPalette');
+const { initThemeToggle } = require('./bootstrap/theme');
+const { createNavigator } = require('./bootstrap/navigation');
+
+const views = {
+  dashboard: ui.$('view-dashboard'),
+  logs: ui.$('view-logs'),
+  settings: ui.$('view-settings'),
+  shutdown: ui.$('view-shutdown'),
+  network: ui.$('view-network'),
+  hardware: ui.$('view-hardware'),
+  idmReset: ui.$('view-idm-reset'),
+  prompts: ui.$('view-prompts'),
+  links: ui.$('view-links'),
+};
+
+const viewLoaders = {
+  settings: () => settingsView.load(),
+  network: () => networkView.load(),
+  hardware: () => hardwareView.load(),
+  prompts: () => promptsView.load(),
+  links: () => linksView.load(),
+};
+
+const modules = [
+  dashboard,
+  logsView,
+  settingsView,
+  shutdownView,
+  networkView,
+  hardwareView,
+  idmResetView,
+  anydeskView,
+  promptsView,
+  linksView,
+];
+
+const navMap = {
+  'nav-dashboard': 'dashboard',
+  'nav-logs': 'logs',
+  'nav-settings': 'settings',
+  'nav-shutdown': 'shutdown',
+  'nav-network': 'network',
+  'nav-hardware': 'hardware',
+  'nav-idm-reset': 'idmReset',
+  'nav-prompts': 'prompts',
+  'nav-links': 'links',
+};
+
 function markAppReady() {
   const body = document.body;
   if (!body || body.classList.contains('app-ready')) return;
+
   body.classList.add('app-ready');
   body.classList.remove('app-loading');
 }
 
-const ui             = require('./ui');
-const state          = require('./state');
-const dashboard      = require('./views/dashboard');
-const logsView       = require('./views/logs');
-const settingsView   = require('./views/settings');
-const shutdownView   = require('./views/tools/shutdown');
-const networkView    = require('./views/tools/network');
-const hardwareView   = require('./views/tools/hardware');
-const idmResetView   = require('./views/tools/idm-reset');
-const anydeskView    = require('./views/tools/anydesk-reset');
-const promptsView    = require('./views/tools/prompts');
-const linksView      = require('./views/tools/links');
-const logPanel       = require('./components/logPanel');
-const commandPalette = require('./components/commandPalette');
+function initQuickLinks() {
+  const quickLinks = {
+    'open-router-web': 'http://localhost:20128',
+    'open-openclaw-web': 'http://127.0.0.1:18789',
+  };
 
-// ─── Theme ────────────────────────────────────────────────────────────────────
-const savedTheme = localStorage.getItem('theme') || 'light';
-document.documentElement.setAttribute('data-theme', savedTheme);
-
-ui.$('theme-toggle').addEventListener('click', () => {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-});
-
-// ─── Navigation ───────────────────────────────────────────────────────────────
-const views = {
-  dashboard: ui.$('view-dashboard'),
-  logs:      ui.$('view-logs'),
-  settings:  ui.$('view-settings'),
-  shutdown:  ui.$('view-shutdown'),
-  network:   ui.$('view-network'),
-  hardware:  ui.$('view-hardware'),
-  idmReset:  ui.$('view-idm-reset'),
-  prompts:   ui.$('view-prompts'),
-  links:     ui.$('view-links')
-};
-
-function switchView(name) {
-  Object.entries(views).forEach(([k, el]) => {
-    el.style.display = k === name ? '' : 'none';
-    if (k === name) {
-      el.classList.remove('view-enter');
-      void el.offsetWidth;
-      el.classList.add('view-enter');
-    }
+  Object.entries(quickLinks).forEach(([id, url]) => {
+    const button = ui.$(id);
+    if (!button) return;
+    button.addEventListener('click', () => ipcRenderer.send('open-browser', url));
   });
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  ui.$(`nav-${name}`).classList.add('active');
-  if (name === 'settings') settingsView.load();
-  if (name === 'network') networkView.load();
-  if (name === 'hardware') hardwareView.load();
-  if (name === 'prompts') promptsView.load();
-  if (name === 'links') linksView.load();
 }
 
-ui.$('nav-dashboard').addEventListener('click', (e) => { e.preventDefault(); switchView('dashboard'); });
-ui.$('nav-logs').addEventListener('click',      (e) => { e.preventDefault(); switchView('logs'); });
-ui.$('nav-settings').addEventListener('click',  (e) => { e.preventDefault(); switchView('settings'); });
-ui.$('nav-shutdown').addEventListener('click',  (e) => { e.preventDefault(); switchView('shutdown'); });
-ui.$('nav-network').addEventListener('click',   (e) => { e.preventDefault(); switchView('network'); });
-ui.$('nav-hardware').addEventListener('click',  (e) => { e.preventDefault(); switchView('hardware'); });
-ui.$('nav-idm-reset').addEventListener('click', (e) => { e.preventDefault(); switchView('idmReset'); });
-ui.$('nav-prompts').addEventListener('click',   (e) => { e.preventDefault(); switchView('prompts'); });
-ui.$('nav-links').addEventListener('click',     (e) => { e.preventDefault(); switchView('links'); });
+function initModules() {
+  modules.forEach((moduleRef) => {
+    if (moduleRef && typeof moduleRef.init === 'function') {
+      moduleRef.init();
+    }
+  });
+}
 
-// ─── Sidebar quick links ──────────────────────────────────────────────────────
-ui.$('open-router-web').addEventListener('click',   () => ipcRenderer.send('open-browser', 'http://localhost:20128'));
-ui.$('open-openclaw-web').addEventListener('click', () => ipcRenderer.send('open-browser', 'http://127.0.0.1:18789'));
+function initShell() {
+  initThemeToggle({
+    root: document.documentElement,
+    storage: localStorage,
+    toggleButton: ui.$('theme-toggle'),
+  });
 
-// ─── Init modules ─────────────────────────────────────────────────────────────
-dashboard.init();
-logsView.init();
-settingsView.init();
-shutdownView.init();
-networkView.init();
-hardwareView.init();
-idmResetView.init();
-anydeskView.init();
-promptsView.init();
-linksView.init();
-logPanel.initLogPanels(['router', 'openclaw']);
-logPanel.initLogFilters();
-ui.initRipple();
-ui.initSkeletons(['router', 'openclaw']);
-commandPalette.init({ ipcRenderer, switchView, loadSettings: settingsView.load });
+  const { bindNavigation, switchView } = createNavigator({
+    ui,
+    views,
+    onViewEnter(name) {
+      const loadView = viewLoaders[name];
+      if (loadView) loadView();
+    },
+  });
 
-// ─── Bootstrap ────────────────────────────────────────────────────────────────
-ipcRenderer.send('check-status');
-ipcRenderer.send('get-app-version');
+  bindNavigation(navMap);
+  initQuickLinks();
+  initModules();
 
-requestAnimationFrame(() => {
-  setTimeout(markAppReady, 2000);
-});
+  logPanel.initLogPanels(['router', 'openclaw']);
+  logPanel.initLogFilters();
+  ui.initRipple();
+  ui.initSkeletons(['router', 'openclaw']);
+  commandPalette.init({ ipcRenderer, switchView, loadSettings: settingsView.load });
+
+  ipcRenderer.send('check-status');
+  ipcRenderer.send('get-app-version');
+
+  requestAnimationFrame(() => {
+    setTimeout(markAppReady, 2000);
+  });
+}
+
+initShell();

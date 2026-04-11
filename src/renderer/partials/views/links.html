@@ -1,0 +1,114 @@
+      <div id="view-links" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Link</h1>
+            <p class="subtitle">Lưu link, ghim link quan trọng và xem preview nhanh.</p>
+          </div>
+          <div class="header-right">
+            <span class="badge badge-warning" id="link-unread-count">0 chưa đọc</span>
+            <span class="badge badge-secondary" id="link-count">0 link</span>
+            <button class="btn btn-success" id="link-open-modal-btn">+ Thêm mới</button>
+            <button class="btn btn-secondary" id="link-sync-settings-btn" title="Sync Settings">Sync</button>
+            <button class="btn btn-secondary" id="link-refresh-btn">Làm mới</button>
+          </div>
+        </header>
+
+        <div class="library-layout">
+          <section class="library-list-card">
+            <div class="library-list-tools">
+              <select id="link-filter" class="shutdown-select">
+                <option value="all">Tất cả</option>
+                <option value="auto">Tự động</option>
+                <option value="work">Công việc</option>
+                <option value="study">Học tập</option>
+                <option value="tool">Tool/Dev</option>
+                <option value="sheet">Sheet/Excel</option>
+                <option value="social">Mạng xã hội</option>
+                <option value="other">Khác</option>
+              </select>
+              <select id="link-sort" class="shutdown-select">
+                <option value="unread">Chưa đọc trước</option>
+                <option value="latest">Mới nhất</option>
+                <option value="name">Tên A-Z</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" type="button" id="link-export-btn">Xuất</button>
+              <button class="btn btn-secondary btn-sm" type="button" id="link-import-btn">Nhập</button>
+            </div>
+            <div class="library-list" id="link-list"></div>
+          </section>
+        </div>
+
+        <div class="library-modal-overlay" id="link-modal" role="dialog" aria-modal="true" aria-labelledby="link-modal-title" style="display:none">
+          <div class="library-modal">
+            <div class="library-modal-head">
+              <div>
+                <h2 id="link-modal-title">Link</h2>
+                <p>Thêm mới hoặc chỉnh sửa link nhanh.</p>
+              </div>
+              <button class="btn-icon btn-secondary" type="button" id="link-modal-close-btn" aria-label="Đóng">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+            <form id="link-form" class="library-form">
+              <label class="library-field">
+                <span class="library-label" id="link-form-title">Tên link</span>
+                <input id="link-name" class="library-input" type="text" maxlength="120" placeholder="Ví dụ: Bài viết về Electron IPC" required>
+              </label>
+              <label class="library-field">
+                <span class="library-label">URL</span>
+                <input id="link-url" class="library-input" type="url" placeholder="https://..." required>
+              </label>
+              <label class="library-field">
+                <span class="library-label">Phân loại</span>
+                <select id="link-category" class="shutdown-select">
+                  <option value="">Tự động</option>
+                  <option value="work">Công việc</option>
+                  <option value="study">Học tập</option>
+                  <option value="tool">Tool/Dev</option>
+                  <option value="sheet">Sheet/Excel</option>
+                  <option value="social">Mạng xã hội</option>
+                  <option value="other">Khác</option>
+                </select>
+              </label>
+              <label class="toggle-row library-toggle-row">
+                <span class="toggle-label">
+                  <strong>Đã đọc</strong>
+                </span>
+                <div class="switch">
+                  <input type="checkbox" id="link-read">
+                  <span class="switch-track"><span class="switch-thumb"></span></span>
+                </div>
+              </label>
+              <div class="library-form-actions library-modal-actions">
+                <button class="btn btn-secondary" type="button" id="link-cancel-btn">Hủy</button>
+                <button class="btn btn-success" type="submit"><span id="link-submit-label">Lưu link</span></button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="library-modal-overlay" id="link-sync-modal" role="dialog" aria-modal="true" aria-labelledby="link-sync-title" style="display:none">
+          <div class="library-modal">
+            <div class="library-modal-head">
+              <div>
+                <h2 id="link-sync-title">Google Sheets CSV Sync</h2>
+                <p>Nhập link CSV công khai của Google Sheet để đồng bộ link.</p>
+              </div>
+              <button class="btn-icon btn-secondary" type="button" id="link-sync-close-btn" aria-label="Đóng">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+            <form id="link-sync-form" class="library-form">
+              <label class="library-field">
+                <span class="library-label">Google Sheet CSV URL</span>
+                <input id="link-sync-url" class="library-input" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../gviz/tq?tqx=out:csv" required>
+              </label>
+              <p class="library-modal-note">CSV cần có các cột: <strong>name</strong>, <strong>url</strong>, <strong>pinned</strong>, <strong>read</strong>.</p>
+              <div class="library-form-actions library-modal-actions">
+                <button class="btn btn-secondary" type="button" id="link-sync-cancel-btn">Hủy</button>
+                <button class="btn btn-success" type="submit">Save &amp; Sync Now</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>

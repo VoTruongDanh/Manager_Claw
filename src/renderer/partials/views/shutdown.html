@@ -1,0 +1,82 @@
+      <!-- Shutdown Timer view -->
+      <div id="view-shutdown" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Hẹn giờ tắt máy</h1>
+            <p class="subtitle">Lên lịch tắt máy hoặc khởi động lại với đếm ngược realtime</p>
+          </div>
+        </header>
+
+        <div class="shutdown-layout">
+          <!-- Countdown display -->
+          <div class="shutdown-countdown-card">
+            <div class="shutdown-countdown-ring">
+              <span id="shutdown-countdown">--:--:--</span>
+              <span class="shutdown-countdown-label">còn lại</span>
+            </div>
+            <div class="shutdown-progress-wrap">
+              <div class="shutdown-progress-track">
+                <div class="shutdown-progress-bar" id="shutdown-countdown-bar"></div>
+              </div>
+            </div>
+            <div class="shutdown-status-row">
+              <span class="status-dot stopped" id="shutdown-status-dot"></span>
+              <span id="shutdown-status-text">Chưa hẹn giờ</span>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="shutdown-controls-card">
+            <!-- Mode -->
+            <div class="shutdown-field">
+              <label class="shutdown-label">Hành động</label>
+              <select id="shutdown-mode" class="shutdown-select">
+                <option value="shutdown">Tắt máy</option>
+                <option value="restart">Khởi động lại</option>
+              </select>
+            </div>
+
+            <!-- Time inputs -->
+            <div class="shutdown-field">
+              <label class="shutdown-label">Thời gian hẹn giờ</label>
+              <div class="shutdown-time-inputs">
+                <div class="shutdown-time-unit">
+                  <input type="number" id="shutdown-hours"   class="shutdown-input" min="0" max="23" value="0" placeholder="0">
+                  <span class="shutdown-unit-label">giờ</span>
+                </div>
+                <div class="shutdown-time-unit">
+                  <input type="number" id="shutdown-minutes" class="shutdown-input" min="0" max="59" value="30" placeholder="0">
+                  <span class="shutdown-unit-label">phút</span>
+                </div>
+                <div class="shutdown-time-unit">
+                  <input type="number" id="shutdown-seconds" class="shutdown-input" min="0" max="59" value="0" placeholder="0">
+                  <span class="shutdown-unit-label">giây</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Presets -->
+            <div class="shutdown-field">
+              <label class="shutdown-label">Nhanh</label>
+              <div class="shutdown-presets" id="shutdown-presets"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="shutdown-actions">
+              <button class="btn btn-success" id="shutdown-start-btn">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3l8 5-8 5V3z"/></svg>
+                Bắt đầu hẹn giờ
+              </button>
+              <button class="btn btn-danger" id="shutdown-cancel-btn" disabled>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="4" width="8" height="8"/></svg>
+                Hủy
+              </button>
+              <button class="btn btn-secondary" id="shutdown-now-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v6a1 1 0 11-2 0V3a1 1 0 011-1zm4.243 2.757a1 1 0 011.415 0A8 8 0 1110 2a1 1 0 110 2 6 6 0 100 12 6 6 0 000-12 1 1 0 110-2 8 8 0 014.243 2.757z" clip-rule="evenodd"/></svg>
+                Tắt ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+

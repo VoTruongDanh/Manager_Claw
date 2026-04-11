@@ -1,0 +1,157 @@
+      <!-- IDM Reset view -->
+      <div id="view-idm-reset" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Reset IDM</h1>
+            <p class="subtitle">Kiểm tra, reset trial và lên lịch tự động.</p>
+          </div>
+        </header>
+
+        <div class="reset-tools-grid">
+
+          <!-- IDM card -->
+          <div class="idm-card">
+            <!-- Header -->
+            <div class="idm-card-header">
+              <div class="idm-card-icon" style="background:#fff;padding:6px">
+                <img src="src/renderer/assets/idm-logo.jpg" alt="IDM" style="width:100%;height:100%;object-fit:contain;border-radius:6px">
+              </div>
+              <div class="idm-card-info">
+                <div class="idm-card-title">Internet Download Manager</div>
+                <div class="idm-card-sub">Reset trial · Xóa registry · Xóa cấu hình</div>
+              </div>
+              <div class="idm-status-badge" id="idm-status">Chưa kiểm tra</div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="progress progress-indeterminate" id="idm-progress" style="display:none;">
+              <div class="progress-bar"></div>
+            </div>
+
+            <!-- Steps -->
+            <div class="idm-steps-panel" id="idm-steps" style="display:none;">
+              <div class="idm-steps-label">Tiến trình reset</div>
+              <div class="idm-steps-list">
+                <div class="idm-step" id="idm-step-1">
+                  <div class="idm-step-num">1</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Tắt IDM</div><div class="idm-step-desc">IDMan.exe, IEMonitor.exe</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+                <div class="idm-step" id="idm-step-2">
+                  <div class="idm-step-num">2</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Xóa registry</div><div class="idm-step-desc">ConfigTime, MData</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+                <div class="idm-step" id="idm-step-3">
+                  <div class="idm-step-num">3</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Xóa cấu hình</div><div class="idm-step-desc">%appdata%\IDM</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+                <div class="idm-step" id="idm-step-4">
+                  <div class="idm-step-num">4</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Hoàn tất</div><div class="idm-step-desc">Mở lại IDM để áp dụng</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions + Auto-reset inline -->
+            <div class="idm-card-actions">
+              <button class="btn btn-secondary" id="idm-check-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                Kiểm tra
+              </button>
+              <button class="btn btn-success" id="idm-reset-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+                Reset ngay
+              </button>
+              <div class="idm-action-sep"></div>
+              <div class="idm-auto-row">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" style="color:var(--text-3);flex-shrink:0"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                <span class="idm-auto-text">Tự động mỗi</span>
+                <div class="idm-days-input-wrap">
+                  <button class="idm-days-btn" id="idm-days-dec" type="button">−</button>
+                  <input type="number" id="idm-auto-days" class="idm-days-input" min="1" max="30" value="5">
+                  <button class="idm-days-btn" id="idm-days-inc" type="button">+</button>
+                </div>
+                <span class="idm-auto-text">ngày</span>
+                <label class="switch">
+                  <input type="checkbox" id="idm-auto-toggle">
+                  <span class="switch-track"><span class="switch-thumb"></span></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Schedule info row -->
+            <div class="idm-schedule-info" id="idm-schedule-info">
+              <span id="idm-last-reset-text">Chưa reset lần nào</span>
+              <span class="idm-schedule-sep">·</span>
+              <span id="idm-next-reset-text">Bật tự động để xem lịch</span>
+            </div>
+          </div>
+
+          <!-- AnyDesk card -->
+          <div class="idm-card">
+            <div class="idm-card-header">
+              <div class="idm-card-icon" style="background:#fff;padding:6px">
+                <img src="src/renderer/assets/anydesk-logo.svg" alt="AnyDesk" style="width:100%;height:100%;object-fit:contain">
+              </div>
+              <div class="idm-card-info">
+                <div class="idm-card-title">AnyDesk</div>
+                <div class="idm-card-sub">Reset ID · Giữ data · Giữ tài khoản liên kết</div>
+              </div>
+              <div class="idm-status-badge" id="anydesk-status">Chưa kiểm tra</div>
+            </div>
+
+            <div class="progress progress-indeterminate" id="anydesk-progress" style="display:none;">
+              <div class="progress-bar"></div>
+            </div>
+
+            <div class="idm-steps-panel" id="anydesk-steps" style="display:none;">
+              <div class="idm-steps-label">Tiến trình reset</div>
+              <div class="idm-steps-list">
+                <div class="idm-step" id="anydesk-step-1">
+                  <div class="idm-step-num">1</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Tắt AnyDesk</div><div class="idm-step-desc">process + service</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+                <div class="idm-step" id="anydesk-step-2">
+                  <div class="idm-step-num">2</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Backup data</div><div class="idm-step-desc">user.conf</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+                <div class="idm-step" id="anydesk-step-3">
+                  <div class="idm-step-num">3</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Xóa ID cũ</div><div class="idm-step-desc">service.conf + system.conf</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+                <div class="idm-step" id="anydesk-step-4">
+                  <div class="idm-step-num">4</div>
+                  <div class="idm-step-content"><div class="idm-step-title">Restore data</div><div class="idm-step-desc">Giữ tài khoản</div></div>
+                  <div class="idm-step-state"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="idm-card-actions">
+              <button class="btn btn-secondary" id="anydesk-check-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+                Kiểm tra
+              </button>
+              <button class="btn btn-success" id="anydesk-reset-btn">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+                Reset ID
+              </button>
+            </div>
+
+            <div class="idm-schedule-info">
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" style="color:var(--green);flex-shrink:0"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              <span>user.conf được giữ nguyên — tài khoản liên kết không bị mất</span>
+              <span class="idm-schedule-sep">·</span>
+              <span id="anydesk-id-text">ID: --</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+

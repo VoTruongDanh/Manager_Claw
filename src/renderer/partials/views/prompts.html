@@ -1,0 +1,46 @@
+      <div id="view-prompts" style="display:none">
+        <header class="header">
+          <div>
+            <h1>Prompt</h1>
+            <p class="subtitle">Lưu và copy nhanh các prompt dùng thường xuyên</p>
+          </div>
+          <div class="header-right">
+            <span class="badge badge-secondary" id="prompt-count">0 prompt</span>
+            <button class="btn btn-success" id="prompt-open-modal-btn">+ Thêm mới</button>
+          </div>
+        </header>
+
+        <div class="library-layout">
+          <section class="library-list-card">
+            <div class="library-list" id="prompt-list"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="library-modal-overlay" id="prompt-modal" role="dialog" aria-modal="true" aria-labelledby="prompt-modal-title" style="display:none">
+        <div class="library-modal">
+          <div class="library-modal-head">
+            <div>
+              <h2 id="prompt-modal-title">Prompt</h2>
+              <p>Thêm mới hoặc chỉnh sửa prompt nhanh.</p>
+            </div>
+            <button class="btn-icon btn-secondary" type="button" id="prompt-modal-close-btn" aria-label="Đóng">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </button>
+          </div>
+          <form id="prompt-form" class="library-form">
+            <label class="library-field">
+              <span class="library-label" id="prompt-form-title">Tên prompt</span>
+              <input id="prompt-name" class="library-input" type="text" maxlength="120" placeholder="Ví dụ: Prompt viết email khách hàng" required>
+            </label>
+            <label class="library-field">
+              <span class="library-label">Nội dung</span>
+              <textarea id="prompt-content" class="library-textarea" placeholder="Nhập nội dung prompt..." required></textarea>
+            </label>
+            <div class="library-form-actions library-modal-actions">
+              <button class="btn btn-secondary" type="button" id="prompt-cancel-btn">Hủy</button>
+              <button class="btn btn-success" type="submit"><span id="prompt-submit-label">Lưu prompt</span></button>
+            </div>
+          </form>
+        </div>
+      </div>

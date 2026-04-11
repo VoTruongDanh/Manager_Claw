@@ -1,0 +1,480 @@
+/* ─── Network Manager ────────────────────────────────────────────────────────── */
+.network-adapters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 16px;
+}
+
+.network-adapter-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: box-shadow .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+}
+
+.network-adapter-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  transform: translateY(-1px);
+  border-color: rgba(37,99,235,.3);
+}
+
+.network-adapter-card[data-status="Up"] {
+  border-left: 3px solid var(--green);
+}
+
+.network-adapter-card[data-status="Disabled"] {
+  opacity: 0.7;
+  border-left: 3px solid var(--text-3);
+}
+
+.network-adapter-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.network-adapter-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+
+.network-adapter-icon.wifi {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.network-adapter-icon.ethernet {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+}
+
+.network-adapter-icon.virtual {
+  background: linear-gradient(135deg, #a855f7, #9333ea);
+  color: white;
+}
+
+.network-adapter-icon.bluetooth {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white;
+}
+
+.network-adapter-icon.other {
+  background: linear-gradient(135deg, #71717a, #52525b);
+  color: white;
+}
+
+.network-adapter-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.network-adapter-info h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-adapter-desc {
+  font-size: 11.5px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-adapter-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.network-meta-item {
+  padding: 14px 20px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.network-meta-item:last-child {
+  border-right: none;
+}
+
+.network-meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--text-3);
+}
+
+.network-meta-value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'Consolas', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-adapter-actions {
+  display: flex;
+  gap: 6px;
+  padding: 14px 16px;
+  flex-wrap: wrap;
+  background: var(--surface);
+}
+
+@media (max-width: 1200px) {
+  .network-adapters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .network-adapters-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .network-adapter-meta {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .network-meta-item {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+  }
+  
+  .network-meta-item:nth-child(2n) {
+    border-right: none;
+  }
+  
+  .network-meta-item:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Hardware Info Styles
+───────────────────────────────────────────────────────────────────────────── */
+
+.hw-timestamp {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+.hw-sections {
+  display: grid;
+  gap: 16px;
+}
+
+.hw-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.hw-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.hw-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.hw-section-title svg {
+  color: var(--primary);
+}
+
+.hw-section-content {
+  padding: 18px;
+}
+
+.hw-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.hw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.hw-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.hw-item.hw-full {
+  grid-column: 1 / -1;
+}
+
+.hw-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+}
+
+.hw-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.hw-copy-btn {
+  opacity: 0.6;
+  transition: opacity 200ms;
+}
+
+.hw-copy-btn:hover {
+  opacity: 1;
+}
+
+/* Memory slots */
+.hw-mem-slots {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hw-mem-slot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.hw-mem-slot-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  min-width: 50px;
+}
+
+.hw-mem-slot-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+
+.hw-mem-slot-info {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* Disk items */
+.hw-disk-item {
+  padding: 14px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.hw-disk-item:last-child {
+  margin-bottom: 0;
+}
+
+.hw-disk-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.hw-disk-drive {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hw-disk-name {
+  font-size: 13px;
+  color: var(--text-2);
+  flex: 1;
+}
+
+.hw-disk-fs {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 2px 6px;
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+.hw-disk-bar {
+  height: 8px;
+  background: var(--surface);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.hw-disk-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+  transition: width 300ms ease;
+}
+
+.hw-disk-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* GPU items */
+.hw-gpu-item {
+  padding: 14px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.hw-gpu-item:last-child {
+  margin-bottom: 0;
+}
+
+.hw-gpu-header {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+/* Network items */
+.hw-net-item {
+  padding: 14px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+
+.hw-net-item:last-child {
+  margin-bottom: 0;
+}
+
+.hw-net-item.hw-net-internal {
+  opacity: 0.6;
+}
+
+.hw-net-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .hw-disk-bar-fill {
+  background: linear-gradient(90deg, var(--primary), #4a9eff);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Copy-Paste Sync Styles
+───────────────────────────────────────────────────────────────────────────── */
+
+.copypaste-sync-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.copypaste-info {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copypaste-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.copypaste-info-label {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.copypaste-info-value {
+  color: var(--text);
+  font-weight: 600;
+  font-family: 'Consolas', monospace;
+}
+
+.copypaste-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alert-info {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.alert-info svg {
+  color: rgb(59, 130, 246);
+}
+
+[data-theme="dark"] .alert-info {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+}

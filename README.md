@@ -1,145 +1,158 @@
 # Service Manager
 
-Ứng dụng Electron để quản lý và giám sát các services trên máy tính (9Router, OpenClaw, và các tiện ích mở rộng).
+Ứng dụng Electron để quản lý và giám sát `9Router`, `OpenClaw` và các công cụ hệ thống mở rộng trên Windows.
 
----
-
-## Chạy & Build
+## Chạy và build
 
 ```bash
-npm start          # chạy dev
-npm run build      # build installer (NSIS/Windows)
+npm start
+npm run build
 ```
 
----
+- `npm start`: chạy app local bằng Electron
+- `npm run build`: build installer Windows bằng `electron-builder`
 
-## Cấu trúc dự án
+## Cấu trúc hiện tại
 
-```
-src/
-  main/                   ← Electron main process (Node.js)
-    index.js              ← Entry point: tạo window, tray, shortcuts, lifecycle
-    ipc.js                ← Tất cả ipcMain handlers; SERVICE_CONFIGS
-    services.js           ← Spawn/stop/update process; port check
-    settings.js           ← Load/save settings.json (userData)
-    tray.js               ← System tray: menu, tooltip, balloon notify
-
-  renderer/               ← UI (chạy trong BrowserWindow)
-    index.js              ← Entry point: khởi tạo tất cả modules
-    state.js              ← Runtime state của các services
-    ui.js                 ← DOM helpers thuần túy (toast, badge, log, metrics...)
-    views/
-      dashboard.js        ← Service cards, IPC handlers status/log/update
-      logs.js             ← View tổng hợp log
-      settings.js         ← View cài đặt
-    components/
-      logPanel.js         ← Collapsible log + filter (All/Error/OK)
-      commandPalette.js   ← Ctrl+K palette, có thể mở rộng
-
-index.html                ← Shell HTML, load src/renderer/index.js
-style.css                 ← Toàn bộ CSS (variables, components, dark mode)
-```
-
----
-
-## Bảo trì
-
-### Sửa UI / style
-- CSS variables ở đầu `style.css` (màu, spacing, animation speed)
-- Mỗi component có section riêng được đánh dấu bằng comment `/* ─── ... */`
-
-### Sửa logic service (start/stop/log)
-- `src/main/services.js` — spawn, kill, port check
-- `src/renderer/views/dashboard.js` — xử lý IPC phía UI
-
-### Sửa settings
-- `src/main/settings.js` — thêm field mới vào `DEFAULTS`
-- `src/renderer/views/settings.js` — bind thêm input HTML tương ứng
-
-### Sửa tray menu
-- `src/main/tray.js` — hàm `updateMenu()`
-
----
-
-## Thêm service mới
-
-**1. Đăng ký service** — mở `src/main/ipc.js`, thêm vào `SERVICE_CONFIGS`:
-
-```js
-myservice: {
-  key: 'myservice', label: 'My Service',
-  cmd: 'myservice-cli', args: ['start'],
-  statusCh: 'myservice-status', logCh: 'myservice-log'
-}
+```text
+.
+├─ index.html                     # app shell, mount HTML partials rồi boot renderer
+├─ style.css                      # CSS manifest, chỉ @import các CSS chunk
+├─ src/
+│  ├─ main/
+│  │  ├─ index.js                 # Electron app lifecycle
+│  │  ├─ ipc.js                   # đăng ký IPC handlers
+│  │  ├─ services.js              # start/stop/restart services
+│  │  ├─ settings.js              # load/save settings.json
+│  │  ├─ tray.js                  # system tray
+│  │  └─ tools/                   # tool phía main process
+│  └─ renderer/
+│     ├─ index.js                 # renderer orchestration
+│     ├─ state.js                 # runtime state
+│     ├─ ui.js                    # DOM helpers dùng chung
+│     ├─ bootstrap/
+│     │  ├─ htmlPartials.js       # mount partial HTML trước khi renderer boot
+│     │  ├─ navigation.js         # switch view + bind nav
+│     │  └─ theme.js              # theme toggle bootstrap
+│     ├─ components/              # component JS dùng lại
+│     ├─ partials/
+│     │  ├─ sidebar.html
+│     │  ├─ command-palette.html
+│     │  ├─ modals/
+│     │  └─ views/                # mỗi view lớn là một partial HTML
+│     ├─ styles/
+│     │  ├─ 01-tokens-reset.css
+│     │  ├─ 02-shell-layout.css
+│     │  ├─ 03-dashboard-shared.css
+│     │  ├─ 04-settings-panels.css
+│     │  ├─ 05-shutdown-reset.css
+│     │  ├─ 06-library-workspaces.css
+│     │  └─ 07-tools-hardware.css
+│     └─ views/                   # logic JS cho từng view/tool
+└─ README.md
 ```
 
-**2. Thêm state** — mở `src/renderer/state.js`:
+## Kiến trúc UI
 
-```js
-myservice: { running: false, startTime: null, pid: null, external: false }
-```
+### 1. HTML shell + partial
 
-**3. Thêm card HTML** — copy một service card trong `index.html`, đổi tất cả `router` → `myservice`.
+- `index.html` chỉ giữ app shell.
+- Nội dung thật nằm trong `src/renderer/partials/**`.
+- `src/renderer/bootstrap/htmlPartials.js` thay các node `data-include="..."` bằng nội dung partial tương ứng trước khi `src/renderer/index.js` chạy.
 
-**4. Bind UI** — trong `src/renderer/views/dashboard.js`, gọi `bindService('myservice')` và thêm vào `initLogPanels` trong `src/renderer/index.js`.
+Khi thêm view mới:
 
----
+1. Tạo partial HTML trong `src/renderer/partials/views/`.
+2. Thêm một dòng `data-include` vào `index.html`.
+3. Tạo file logic trong `src/renderer/views/` hoặc `src/renderer/views/tools/`.
+4. Đăng ký view trong `src/renderer/index.js`.
 
-## Thêm tiện ích máy tính (view mới)
+### 2. CSS manifest + chunk
 
-**1. Tạo view** — `src/renderer/views/tools/mytool.js`:
+- `style.css` không chứa CSS dài nữa, chỉ import các file trong `src/renderer/styles/`.
+- Chia file theo trách nhiệm lớn để tránh một file 4000+ dòng.
 
-```js
-const ui = require('../ui');  // hoặc ../../ui tùy depth
+Nguyên tắc:
 
-function init() {
-  // bind DOM events
-}
+- Style dùng chung: đưa vào chunk phù hợp hiện có.
+- Style quá đặc thù cho một view/tool: ưu tiên đặt gần block chunk của view đó.
+- Nếu một nhóm style đủ lớn và có lifecycle riêng, tách thêm chunk mới rồi import từ `style.css`.
 
-module.exports = { init };
-```
+### 3. Renderer bootstrap
 
-**2. Thêm nav item** — trong `index.html`, thêm `<a>` vào `.nav` và thêm `<div id="view-mytool">` vào `.main-content`.
+`src/renderer/index.js` hiện chỉ làm orchestration:
 
-**3. Đăng ký** — trong `src/renderer/index.js`:
+- init theme
+- init navigation
+- bind quick links
+- init các view/components
+- boot command palette
 
-```js
-const mytool = require('./views/tools/mytool');
-// thêm vào views object
-views.mytool = ui.$('view-mytool');
-// thêm nav listener
-ui.$('nav-mytool').addEventListener('click', (e) => { e.preventDefault(); switchView('mytool'); });
-// init
-mytool.init();
-```
+Không nên nhét thêm HTML dài hoặc logic UI chi tiết vào đây.
 
-**4. IPC nếu cần** — thêm handler vào `src/main/ipc.js` trong hàm `register()`.
+## Cách thêm/chỉnh view
 
----
+### Thêm một tool/view mới
 
-## Thêm lệnh vào Command Palette (Ctrl+K)
+1. Tạo HTML ở `src/renderer/partials/views/my-tool.html`.
+2. Thêm `data-include="src/renderer/partials/views/my-tool.html"` vào `index.html`.
+3. Tạo logic ở `src/renderer/views/tools/my-tool.js`.
+4. Import và init trong `src/renderer/index.js`.
+5. Nếu cần backend, thêm IPC/tool ở `src/main/ipc.js` hoặc `src/main/tools/`.
 
-```js
-// trong bất kỳ module renderer nào
-const palette = commandPalette.init(...); // hoặc lưu ref khi init
-palette.addCommand({
-  label: 'Tên lệnh hiển thị',
-  icon: `<svg .../>`,
-  action: () => { /* làm gì đó */ }
-});
-```
+### Chỉnh giao diện một view có sẵn
 
----
+- Chỉnh markup ở partial HTML tương ứng trong `src/renderer/partials/views/`.
+- Chỉnh hành vi ở file JS tương ứng trong `src/renderer/views/`.
+- Chỉnh style ở chunk CSS phù hợp trong `src/renderer/styles/`.
+
+## Cách thêm service mới
+
+Luồng hiện tại chưa hoàn toàn config-driven, nên thêm service mới vẫn cần sửa nhiều điểm.
+
+Các điểm chính:
+
+1. Thêm config và IPC trong `src/main/ipc.js`
+2. Thêm runtime/state trong `src/main/services.js`
+3. Thêm state renderer trong `src/renderer/state.js`
+4. Thêm card HTML ở partial dashboard
+5. Bind UI trong `src/renderer/views/dashboard.js`
+6. Nếu cần tray/control riêng, cập nhật `src/main/tray.js`
+
+## Lưu ý encoding tiếng Việt
+
+Project này có nhiều text tiếng Việt trong HTML/JS/README, nên:
+
+- luôn lưu file text dưới dạng `UTF-8`
+- không convert qua ANSI/Windows-1258
+- khi script hóa việc tách/generate file, phải ghi rõ encoding `utf8`
+
+Nếu UI hiển thị tiếng Việt bị vỡ ký tự, nguyên nhân gần như chắc là file đã bị ghi sai encoding ở một bước refactor hoặc script hóa.
 
 ## Settings file
 
-Lưu tại: `%APPDATA%\claw-router-manager\settings.json`
+File settings được lưu tại:
 
-| Key | Mặc định | Mô tả |
-|-----|----------|-------|
-| `autoLaunch` | false | Khởi động cùng Windows |
-| `startMinimized` | false | Ẩn xuống tray khi mở |
-| `autoStartRouter` | false | Tự start 9Router khi app mở |
-| `autoStartOpenclaw` | false | Tự start OpenClaw khi app mở |
-| `minimizeToTray` | true | Ẩn xuống tray thay vì thoát khi đóng |
-| `windowBounds` | auto | Vị trí và kích thước cửa sổ |
+```text
+%APPDATA%\claw-router-manager\settings.json
+```
+
+Một số key chính:
+
+| Key | Ý nghĩa |
+| --- | --- |
+| `autoLaunch` | mở cùng Windows |
+| `startMinimized` | khởi động thu nhỏ |
+| `autoStartRouter` | tự chạy 9Router |
+| `autoStartOpenclaw` | tự chạy OpenClaw |
+| `minimizeToTray` | đóng thì ẩn xuống tray |
+| `autoHeal` | tự restart service khi crash/mất phản hồi |
+| `prompts` | thư viện prompt |
+| `links` | thư viện link |
+| `sync_url` | Google Sheets CSV sync URL |
+
+## Gợi ý bảo trì tiếp theo
+
+- Tách `src/main/ipc.js` thành nhiều module đăng ký IPC nhỏ hơn.
+- Làm service registry dùng chung cho `main`, `renderer`, `tray`.
+- Tiếp tục chia sâu CSS chunk hiện tại thành `base/components/views/tools` nếu số lượng tool tăng thêm.
