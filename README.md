@@ -1,6 +1,6 @@
-# Service Manager
+# Extention
 
-Ứng dụng Electron để quản lý và giám sát `9Router`, `OpenClaw` và các công cụ hệ thống mở rộng trên Windows.
+Tiện ích máy tính - Ứng dụng Electron cung cấp các công cụ quản lý hệ thống, mạng, phần cứng và tiện ích khác trên Windows.
 
 ## Chạy và build
 

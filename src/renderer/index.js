@@ -11,6 +11,8 @@ const idmResetView = require('./views/tools/idm-reset');
 const anydeskView = require('./views/tools/anydesk-reset');
 const promptsView = require('./views/tools/prompts');
 const linksView = require('./views/tools/links');
+const routerView = require('./views/router');
+const openclawView = require('./views/openclaw');
 const logPanel = require('./components/logPanel');
 const commandPalette = require('./components/commandPalette');
 const { initThemeToggle } = require('./bootstrap/theme');
@@ -18,6 +20,8 @@ const { createNavigator } = require('./bootstrap/navigation');
 
 const views = {
   dashboard: ui.$('view-dashboard'),
+  router: ui.$('view-router'),
+  openclaw: ui.$('view-openclaw'),
   logs: ui.$('view-logs'),
   settings: ui.$('view-settings'),
   shutdown: ui.$('view-shutdown'),
@@ -47,10 +51,14 @@ const modules = [
   anydeskView,
   promptsView,
   linksView,
+  routerView,
+  openclawView,
 ];
 
 const navMap = {
   'nav-dashboard': 'dashboard',
+  'nav-router': 'router',
+  'nav-openclaw': 'openclaw',
   'nav-logs': 'logs',
   'nav-settings': 'settings',
   'nav-shutdown': 'shutdown',
@@ -70,16 +78,7 @@ function markAppReady() {
 }
 
 function initQuickLinks() {
-  const quickLinks = {
-    'open-router-web': 'http://localhost:20128',
-    'open-openclaw-web': 'http://127.0.0.1:18789',
-  };
-
-  Object.entries(quickLinks).forEach(([id, url]) => {
-    const button = ui.$(id);
-    if (!button) return;
-    button.addEventListener('click', () => ipcRenderer.send('open-browser', url));
-  });
+  // Quick links đã được xóa khỏi sidebar, không còn cần init
 }
 
 function initModules() {
@@ -107,6 +106,7 @@ function initShell() {
   });
 
   bindNavigation(navMap);
+  switchView('dashboard'); // Ẩn tất cả view khác, chỉ hiện dashboard
   initQuickLinks();
   initModules();
 

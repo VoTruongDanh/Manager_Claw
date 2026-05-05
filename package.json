@@ -1,16 +1,20 @@
 {
-  "name": "claw-router-manager",
+  "name": "Extention",
   "version": "1.0.0",
-  "description": "Quản lý OpenClaw và 9Router",
+  "description": "Tiện ích máy tính",
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "build:installer": "electron-builder --win nsis",
+    "build:portable": "electron-builder --win portable",
+    "build:all": "node scripts/build.js"
   },
   "keywords": [
-    "openclaw",
-    "9router",
-    "manager"
+    "tiện ích",
+    "máy tính",
+    "system",
+    "tools"
   ],
   "author": "",
   "license": "MIT",
@@ -19,11 +23,43 @@
     "electron-builder": "^26.8.1"
   },
   "build": {
-    "appId": "com.clawrouter.manager",
+    "appId": "com.extension.app",
+    "productName": "Extention",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/main/**/*",
+      "src/renderer/**/*",
+      "index.html",
+      "style.css",
+      "icon.png",
+      "icon.ico",
+      "node_modules/**/*",
+      "package.json"
+    ],
     "win": {
-      "target": "nsis",
-      "icon": "icon.ico",
-      "requestedExecutionLevel": "requireAdministrator"
+      "requestedExecutionLevel": "requireAdministrator",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Extention"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
     }
   }
 }

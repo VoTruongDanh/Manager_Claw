@@ -21,15 +21,19 @@ function createNavigator({ ui, views, onViewEnter }) {
   }
 
   function bindNavigation(navMap) {
-    Object.entries(navMap).forEach(([navId, viewName]) => {
-      const navElement = ui.$(navId);
-      if (!navElement) return;
+    // Event delegation: bind click event to document
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('[id^="nav-"]');
+      if (!target) return;
 
-      navElement.addEventListener('click', (event) => {
-        event.preventDefault();
-        switchView(viewName);
-      });
-    });
+      const viewName = navMap[target.id];
+      if (!viewName) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      console.log(`Switching to view: ${viewName}`);
+      switchView(viewName);
+    }, true);
   }
 
   return { bindNavigation, switchView };
