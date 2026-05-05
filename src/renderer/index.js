@@ -13,6 +13,7 @@ const promptsView = require('./views/tools/prompts');
 const linksView = require('./views/tools/links');
 const routerView = require('./views/router');
 const openclawView = require('./views/openclaw');
+const schedulerView = require('./views/scheduler');
 const logPanel = require('./components/logPanel');
 const commandPalette = require('./components/commandPalette');
 const { initThemeToggle } = require('./bootstrap/theme');
@@ -25,6 +26,7 @@ const views = {
   logs: ui.$('view-logs'),
   settings: ui.$('view-settings'),
   shutdown: ui.$('view-shutdown'),
+  scheduler: ui.$('view-scheduler'),
   network: ui.$('view-network'),
   hardware: ui.$('view-hardware'),
   idmReset: ui.$('view-idm-reset'),
@@ -38,6 +40,7 @@ const viewLoaders = {
   hardware: () => hardwareView.load(),
   prompts: () => promptsView.load(),
   links: () => linksView.load(),
+  scheduler: () => schedulerView.render(),
 };
 
 const modules = [
@@ -45,6 +48,7 @@ const modules = [
   logsView,
   settingsView,
   shutdownView,
+  schedulerView,
   networkView,
   hardwareView,
   idmResetView,
@@ -62,6 +66,7 @@ const navMap = {
   'nav-logs': 'logs',
   'nav-settings': 'settings',
   'nav-shutdown': 'shutdown',
+  'nav-scheduler': 'scheduler',
   'nav-network': 'network',
   'nav-hardware': 'hardware',
   'nav-idm-reset': 'idmReset',

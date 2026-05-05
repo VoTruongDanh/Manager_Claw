@@ -1,0 +1,177 @@
+      <!-- Scheduler view -->
+      <div id="view-scheduler">
+        <div class="scheduler-page">
+          <header class="page-header">
+            <h1>Nhắc Nhở</h1>
+            <p>Chọn giờ đặt lịch thông báo</p>
+          </header>
+
+          <div class="clock-scheduler">
+            <div class="clock-container">
+              <!-- Step indicator -->
+              <div class="step-indicator">
+                <div class="step step-1 active" data-step="1">
+                  <div class="step-number">1</div>
+                  <div class="step-label">Chọn giờ</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step step-2" data-step="2">
+                  <div class="step-number">2</div>
+                  <div class="step-label">Chọn phút</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step step-3" data-step="3">
+                  <div class="step-number">3</div>
+                  <div class="step-label">Xác nhận</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step step-4" data-step="4">
+                  <div class="step-number">4</div>
+                  <div class="step-label">Nhập thông tin</div>
+                </div>
+              </div>
+
+              <!-- Step 1: Select Hour -->
+              <div class="step-content step-1-content active">
+                <div class="clock-face hour-only">
+                  <div class="clock-center"></div>
+                  <div class="clock-hour" id="clock-hour"></div>
+                  <div class="clock-numbers">
+                    <span class="clock-number" data-hour="1">1</span>
+                    <span class="clock-number" data-hour="2">2</span>
+                    <span class="clock-number" data-hour="3">3</span>
+                    <span class="clock-number" data-hour="4">4</span>
+                    <span class="clock-number" data-hour="5">5</span>
+                    <span class="clock-number" data-hour="6">6</span>
+                    <span class="clock-number" data-hour="7">7</span>
+                    <span class="clock-number" data-hour="8">8</span>
+                    <span class="clock-number" data-hour="9">9</span>
+                    <span class="clock-number" data-hour="10">10</span>
+                    <span class="clock-number" data-hour="11">11</span>
+                    <span class="clock-number" data-hour="12">12</span>
+                  </div>
+                </div>
+                <div class="time-display">
+                  <div class="time-value" id="selected-hour-display">12</div>
+                  <div class="time-label">Giờ</div>
+                </div>
+                <button class="btn btn-primary next-step-btn" data-next="2">Tiếp tục →</button>
+              </div>
+
+              <!-- Step 2: Select Minute -->
+              <div class="step-content step-2-content">
+                <div class="clock-face minute-only">
+                  <div class="clock-center"></div>
+                  <div class="clock-minute" id="clock-minute"></div>
+                  <div class="minute-numbers">
+                    <span class="minute-number" data-minute="0">00</span>
+                    <span class="minute-number" data-minute="5">05</span>
+                    <span class="minute-number" data-minute="10">10</span>
+                    <span class="minute-number" data-minute="15">15</span>
+                    <span class="minute-number" data-minute="20">20</span>
+                    <span class="minute-number" data-minute="25">25</span>
+                    <span class="minute-number" data-minute="30">30</span>
+                    <span class="minute-number" data-minute="35">35</span>
+                    <span class="minute-number" data-minute="40">40</span>
+                    <span class="minute-number" data-minute="45">45</span>
+                    <span class="minute-number" data-minute="50">50</span>
+                    <span class="minute-number" data-minute="55">55</span>
+                  </div>
+                </div>
+                <div class="time-display">
+                  <div class="time-value" id="selected-minute-display">00</div>
+                  <div class="time-label">Phút</div>
+                </div>
+                <div class="step-buttons">
+                  <button class="btn btn-secondary prev-step-btn" data-prev="1">← Quay lại</button>
+                  <button class="btn btn-primary next-step-btn" data-next="3">Tiếp tục →</button>
+                </div>
+              </div>
+
+              <!-- Step 3: Confirm -->
+              <div class="step-content step-3-content">
+                <div class="time-display large">
+                  <div class="time-value" id="final-time-display">12:00</div>
+                  <div class="time-label">Thời gian đã chọn</div>
+                </div>
+                <div class="step-buttons">
+                  <button class="btn btn-secondary prev-step-btn" data-prev="2">← Quay lại</button>
+                  <button class="btn btn-primary next-step-btn" data-next="4">Tiếp tục →</button>
+                </div>
+              </div>
+
+              <!-- Step 4: Enter Information -->
+              <div class="step-content step-4-content">
+                <div class="form-container">
+                  <div class="control-group">
+                    <label>Tên lịch</label>
+                    <input type="text" id="schedule-name" placeholder="VD: Nhắc họp" class="form-input">
+                  </div>
+
+                  <div class="control-group">
+                    <label>Nội dung thông báo</label>
+                    <textarea id="schedule-message" placeholder="Nhập nội dung..." class="form-input" rows="2"></textarea>
+                  </div>
+
+                  <div class="control-group">
+                    <label>Loại lặp</label>
+                    <div class="repeat-options">
+                      <button class="repeat-btn active" data-type="once">Một lần</button>
+                      <button class="repeat-btn" data-type="daily">Hàng ngày</button>
+                      <button class="repeat-btn" data-type="weekly">Hàng tuần</button>
+                      <button class="repeat-btn" data-type="monthly">Hàng tháng</button>
+                    </div>
+                  </div>
+
+                  <div class="control-group" id="date-group" style="display: none;">
+                    <label>Ngày</label>
+                    <input type="date" id="schedule-date" class="form-input">
+                  </div>
+
+                  <div class="control-group" id="days-group" style="display: none;">
+                    <label>Ngày trong tuần</label>
+                    <div class="day-selector">
+                      <label class="day-checkbox"><input type="checkbox" value="0"><span>CN</span></label>
+                      <label class="day-checkbox"><input type="checkbox" value="1"><span>T2</span></label>
+                      <label class="day-checkbox"><input type="checkbox" value="2"><span>T3</span></label>
+                      <label class="day-checkbox"><input type="checkbox" value="3"><span>T4</span></label>
+                      <label class="day-checkbox"><input type="checkbox" value="4"><span>T5</span></label>
+                      <label class="day-checkbox"><input type="checkbox" value="5"><span>T6</span></label>
+                      <label class="day-checkbox"><input type="checkbox" value="6"><span>T7</span></label>
+                    </div>
+                  </div>
+
+                  <div class="control-group">
+                    <label>Âm thanh</label>
+                    <div class="sound-options">
+                      <button class="sound-btn active" data-sound="default">Mặc định</button>
+                      <button class="sound-btn" data-sound="chime">Chuông</button>
+                      <button class="sound-btn" data-sound="alert">Cảnh báo</button>
+                      <button class="sound-btn" data-sound="none">Không</button>
+                    </div>
+                  </div>
+
+                  <div class="step-buttons">
+                    <button class="btn btn-secondary prev-step-btn" data-prev="3">← Quay lại</button>
+                    <button id="save-schedule" class="btn btn-primary">Lưu lịch</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="scheduler-list">
+            <div class="list-header">
+              <h3>Lịch của bạn <span id="schedule-count">0</span></h3>
+            </div>
+            <div id="schedule-list-container">
+              <div class="empty-state">
+                <p>Chưa có lịch nào</p>
+              </div>
+            </div>
+            <div id="debug-info" style="margin-top: 10px; padding: 8px; background: #f0f0f0; border-radius: 4px; font-size: 11px; color: #666;">
+              Debug: schedules=<span id="debug-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>

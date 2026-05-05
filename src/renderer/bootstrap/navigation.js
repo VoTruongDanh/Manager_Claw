@@ -31,7 +31,6 @@ function createNavigator({ ui, views, onViewEnter }) {
 
       event.preventDefault();
       event.stopPropagation();
-      console.log(`Switching to view: ${viewName}`);
       switchView(viewName);
     }, true);
   }
